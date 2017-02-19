@@ -249,23 +249,26 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     fact_price = []
     predict_r = []
     fact_r = []
-    p_values = []
+    p_values_statistic = []
+    p_values_predict = []
     for i in range(len(hist) - days_for_statistic - days_for_predict + 1):  # i is test count [1,..)
         print('percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist) - days_for_statistic - days_for_predict + 1)))
 
-        sub_hist = hist[(days_for_predict + i):(days_for_statistic + days_for_predict + i)]  # hist[)
+        sub_hist_statistic = hist[(days_for_predict + i):(days_for_statistic + days_for_predict + i)]  # hist[)
+        sub_hist_predict = hist[i:(days_for_predict + i)]  # hist[)
         s0 = hist.close.values[days_for_predict + i]
-        p = get_predict(sub_hist, days_for_predict)
+        p = get_predict(sub_hist_statistic, days_for_predict)
         f = hist['close'].values[i]
         predict_price.insert(0, p)  # insert at beginning
         fact_price.insert(0, f)
         predict_r.insert(0, (1.0 * (p - s0) / s0))
         fact_r.insert(0, (1.0 * (f - s0) / s0))
-        p_values.insert(0, CQF.get_p_value_of_normal_test(sub_hist.close.values))
+        p_values_statistic.insert(0, CQF.get_p_value_of_normal_test(sub_hist_statistic.close.values))
+        p_values_predict.insert(0, CQF.get_p_value_of_normal_test(sub_hist_predict.close.values))
 
     # initiate figure
     fig = plt.figure(figsize=(15, 8))
-    fig.subplots_adjust(hspace=0.8, wspace=0.1, top=0.95, left=0.05, right=0.95, bottom=0.1)
+    fig.subplots_adjust(hspace=1, wspace=0.1, top=0.95, left=0.05, right=0.95, bottom=0.1)
 
     # get x axis
     t = []
@@ -277,8 +280,8 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
         if count >= len(predict_price):
             break
 
-    # plot ax 1
-    ax1 = fig.add_subplot(325)
+    # plot ax 1 prices
+    ax1 = fig.add_subplot(427)
     plt.plot(t, predict_price, 'r')
     plt.plot(t, fact_price, 'b')
 
@@ -294,12 +297,13 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     ax1.grid(True)
 
     # adjust plot
-    plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
+    plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
     plt.title(
-        'predicted prices(red) & fact prices(blue) [' + str(days_for_statistic) + ' to ' + str(days_for_predict) + ']')
+        code + ' predicted prices(red) & fact prices(blue) [' + str(days_for_statistic) + ' to ' + str(
+            days_for_predict) + ']')
 
-    # plot ax 2
-    ax2 = fig.add_subplot(311)
+    # plot ax 2 returns
+    ax2 = fig.add_subplot(411)
     plt.fill_between(t, 0, fact_r, facecolor='b', alpha=0.3)
     plt.plot(t, predict_r, 'r')
     plt.plot(t, fact_r, 'b')
@@ -316,14 +320,13 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     ax2.grid(True)
 
     # adjust plot
-    plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-    plt.title(
-        'predicted returns(red) & fact returns(blue)[' + str(days_for_statistic) + ' to ' + str(
-            days_for_predict) + '] -- ' + str(days_for_predict) + ' days return')
+    plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
+    plt.title(code + ' predicted returns(red) & fact returns(blue)[' + str(days_for_statistic) + ' to ' +
+              str(days_for_predict) + '] -- ' + str(days_for_predict) + ' days return')
 
-    # plot ax 3
-    ax3 = fig.add_subplot(312)
-    plt.bar(t, p_values, alpha=0.5, color='g')
+    # plot ax 3 p_value statistic history days
+    ax3 = fig.add_subplot(412)
+    plt.bar(t, p_values_statistic, alpha=0.5, color='g')
     line_05 = plt.Line2D(
         xdata=(t[0], t[-1]), ydata=(0.05, 0.05),
         color='r',
@@ -351,17 +354,51 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     ax3.grid(True)
 
     # adjust plot
-    plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-    plt.title('p-values(green bar) [' + str(days_for_statistic) + ' to ' + str(
+    plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
+    plt.title(code + ' p-values for statistic history days (green bar) [' + str(days_for_statistic) + ' to ' + str(
         days_for_predict) + '] -- normal distribution test for ' + str(days_for_statistic) + ' days ')
 
-    # plot ax 4
-    fig.add_subplot(326)
+    # plot ax 4 p_value predicted future days
+    ax4 = fig.add_subplot(413)
+    plt.bar(t, p_values_predict, alpha=0.5, color='g')
+    line_05 = plt.Line2D(
+        xdata=(t[0], t[-1]), ydata=(0.05, 0.05),
+        color='r',
+        linewidth=0.5,
+        antialiased=True,
+    )
+    ax4.add_line(line_05)
+    line_01 = plt.Line2D(
+        xdata=(t[0], t[-1]), ydata=(0.01, 0.01),
+        color='k',
+        linewidth=0.5,
+        antialiased=True,
+    )
+    ax4.add_line(line_01)
+
+    # adjust axis
+    mondays = mpd.WeekdayLocator(mpd.MONDAY)
+    all_days = mpd.DayLocator()
+    ax4.xaxis.set_major_locator(mondays)
+    ax4.xaxis.set_minor_locator(all_days)
+    formatter = mpd.DateFormatter('%m-%d-%Y')  # 2-29-2015
+    ax4.xaxis.set_major_formatter(formatter)
+    ax4.autoscale_view()
+    ax4.xaxis_date()
+    ax4.grid(True)
+
+    # adjust plot
+    plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
+    plt.title(code + ' p-values for predicted future days (green bar) [' + str(days_for_statistic) + ' to ' + str(
+        days_for_predict) + '] -- normal distribution test for ' + str(days_for_statistic) + ' days ')
+
+    # plot ax 5 histogram
+    fig.add_subplot(428)
     errors = []
     for i in range(len(predict_r)):
         errors.append(fact_r[i] - predict_r[i])
     plt.hist(errors)
-    plt.title('histogram of (fact return - predicted return) [' + str(days_for_statistic) + ' to ' + str(
+    plt.title(code + ' histogram of (fact return - predicted return) [' + str(days_for_statistic) + ' to ' + str(
         days_for_predict) + ']')
     plt.show()
 
