@@ -16,3 +16,8 @@
     pip install lxml
     pip install requests
     pip install requests
+
+3.run pip and python (windows)
+    add PATH("...Python\Python35\Scripts;...Python\Python35")
+4.install scipy (windows)
+    https://www.scipy.org/install.html
