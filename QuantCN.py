@@ -239,7 +239,7 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
         return
     if len(hist) < (days_for_statistic + days_for_predict):
         print('--- not enough history data. hist:' + str(len(hist))
-               + ' at least:' + str(days_for_statistic + days_for_predict))
+              + ' at least:' + str(days_for_statistic + days_for_predict))
         return
     else:
         print('--- number of test: ' + str(len(hist) - days_for_statistic - days_for_predict + 1) + '\n')
@@ -300,6 +300,7 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
 
     # plot ax 2
     ax2 = fig.add_subplot(311)
+    plt.fill_between(t, 0, fact_r, facecolor='b', alpha=0.3)
     plt.plot(t, predict_r, 'r')
     plt.plot(t, fact_r, 'b')
 
@@ -317,7 +318,8 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     # adjust plot
     plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
     plt.title(
-        'predicted returns(red) & fact returns(blue)[' + str(days_for_statistic) + ' to ' + str(days_for_predict) + ']')
+        'predicted returns(red) & fact returns(blue)[' + str(days_for_statistic) + ' to ' + str(
+            days_for_predict) + '] -- ' + str(days_for_predict) + ' days return')
 
     # plot ax 3
     ax3 = fig.add_subplot(312)
@@ -351,7 +353,7 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     # adjust plot
     plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
     plt.title('p-values(green bar) [' + str(days_for_statistic) + ' to ' + str(
-        days_for_predict) + ']')
+        days_for_predict) + '] -- normal distribution test for ' + str(days_for_statistic) + ' days ')
 
     # plot ax 4
     fig.add_subplot(326)
