@@ -508,7 +508,7 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
 
     # initiate plots
     fig, ax = plt.subplots(figsize=(20, 6))
-    fig.subplots_adjust(bottom=0.2)
+    fig.subplots_adjust(bottom=0.2, left=0.05, right=0.95)
 
     # plot candlestick
     half_width = width / 2.0
@@ -567,12 +567,12 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
         # get predicts and facts
         predict_prices = []
         p_values = []
-        for i in range(len(hist_data) - days_for_statistic - days_for_predict + 1):  # i is test count [1,..)
+        for i in range(len(hist_data) - days_for_statistic + 1):  # i is test count [1,..)
             print(
-                'percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist_data) - days_for_statistic - days_for_predict + 1)))
+                'percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist_data) - days_for_statistic + 1)))
 
-            sub_hist = hist_data[(days_for_predict + i):(days_for_statistic + days_for_predict + i)]  # hist[)
-            p = get_predict(sub_hist, days_for_predict, 20000)
+            sub_hist = hist_data[i:(days_for_statistic + i)]  # hist[)
+            p = get_predict(sub_hist, days_for_predict, 10000)
 
             predict_prices.insert(0, p)  # insert at beginning
             p_values.insert(0, CQF.get_p_value_of_normal_test(sub_hist.close.values))
@@ -583,8 +583,13 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
             _date_time = _date_string.to_pydatetime()
             _t.insert(0, mpd.date2num(_date_time))
             count += 1
-            if count >= len(predict_prices):
+            if count >= (len(predict_prices) - days_for_predict):
                 break
+
+        last_time_datetime = mpd.num2date(_t[-1])
+        for i in range(days_for_predict):
+            next_datetime = last_time_datetime + datetime.timedelta(days=i)
+            _t.append(mpd.date2num(next_datetime))
 
         return _t, predict_prices, p_values
 
@@ -606,7 +611,9 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
 
     # adjust plot
     plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-    plt.title(code + ' [days: ' + str(len(hist['close'])) + ']')
+    plt.title(code + '  with predicted future prices: [' + str(days_short_statistic) + ' to ' + str(
+        days_short_predict) + '](red), [' + str(days_long_statistic) + ' to ' + str(
+        days_long_predict) + '](blue)\n<The Predicted Days Are Shown In Calendar Days Not In Trading Days>')
     plt.show()
 
     return

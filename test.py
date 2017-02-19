@@ -6,5 +6,5 @@ import matplotlib.pyplot as plt
 # qc.load_('/Users/yipengli/Documents/QuantLibData/20170216_5_60.npy', 0.05, 0.055)
 # qc.plot_candlestick('000514')
 # qc.predict('000514', 180, 365)
-qc.plot_predicts_and_facts('000514', 5, 26, 80)
-# qc.plot_candlestick_mc_gbm('000514', 200, 5, 12, 5, 26)
+qc.plot_predicts_and_facts('000514', 5, 20, 150)
+# qc.plot_candlestick_mc_gbm('000514', 150, 5, 20, 10, 90)
