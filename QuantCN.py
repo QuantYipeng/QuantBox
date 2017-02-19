@@ -1,11 +1,9 @@
 import datetime
-
 import matplotlib.dates as mpd
 import matplotlib.pyplot as plt
 import numpy as np
 import tushare as ts
-
-from Lib import CQF
+import CQF
 
 
 def predict(c='300403', days_for_predict=5, days_for_statistic=90):
