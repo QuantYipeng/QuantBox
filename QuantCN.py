@@ -1,17 +1,15 @@
 import datetime
-
 import matplotlib.dates as mpd
 import matplotlib.pyplot as plt
 import numpy as np
 import tushare as ts
-
-from Lib import CQF
+import CQF
 
 
 def predict(c='300403', days_for_predict=5, days_for_statistic=90):
     # print expected return on geometric brownian motion monte carlo simulation
     r, p = get_er_of_mt_gbm(c, days_for_predict, 20000, days_for_statistic)
-    print ('Stock:' + str(c) + ' Return:' + str(r) + ' P-value:' + str(p))
+    print('Stock:' + str(c) + ' Return:' + str(r) + ' P-value:' + str(p))
 
     # plot history candlestick
     plot_candlestick(c, days_for_statistic)
@@ -89,12 +87,12 @@ def write_er_mc_gbm(file_name='20170215.npy', days_for_predict=5,
             r.append(er)
             c.append(i)
             p.append(p_value)
-            print ('...')
-            print ('Current:    %d' % count)
-            print ('Total:      %d' % len(stock_info))
-            print ('Stock Code: %s' % i)
-            print ('Expected R: %0.4f %%' % (er * 100))
-            print ('P-Value:    %0.4f %%' % (p_value * 100))
+            print('...')
+            print('Current:    %d' % count)
+            print('Total:      %d' % len(stock_info))
+            print('Stock Code: %s' % i)
+            print('Expected R: %0.4f %%' % (er * 100))
+            print('P-Value:    %0.4f %%' % (p_value * 100))
         except:
             continue
 
@@ -110,7 +108,8 @@ def load_(file_name='20170215.npy', bottom=0.095, top=0.1):
 
     # load the stock codes
     c = content[0]
-    print c
+    print(c)
+
     # load the expected returns
     r_str = content[1]
     r = [float(x) for x in r_str]
@@ -128,7 +127,7 @@ def load_(file_name='20170215.npy', bottom=0.095, top=0.1):
     for i in index[0]:
         if is_booming_stock(c[i]) == 1:
             continue
-        print ('Stock:' + str(c[i]) + ' P-value:' + str(p[i]))
+        print('Stock:' + str(c[i]) + ' P-value:' + str(p[i]))
         strings.append('Stock:' + str(c[i]) + ' P-value:' + str(p[i]) + '\n')
 
     string = "".join(strings)
@@ -161,7 +160,7 @@ def is_booming_stock(code='300403', days=365):
             is_booming = 0
 
         if is_booming == 5:
-            print ('stock:' + str(code) + ' is a booming stock')
+            print('stock:' + str(code) + ' is a booming stock')
             return 1
     return 0
 
@@ -193,12 +192,12 @@ def plot_gbm(code='300403', days_for_predict=100, days_for_statistic=365):
     sigma = np.sqrt(np.var(ds_by_s.values[1:])) / np.sqrt(dt)
 
     # print parameters
-    print ('price (current) = %0.2f' % s0)
-    print ('return (max) = %0.2f %%' % (max_return * 100))
-    print ('return (min) = %0.2f %%' % (min_return * 100))
-    print ('return (mu) = %0.2f %%' % (mu * 100))
-    print ('return (sigma) = %0.2f %%' % (sigma * 100))
-    print ('history (len) = %d' % len(ds_by_s))
+    print('price (current) = %0.2f' % s0)
+    print('return (max) = %0.2f %%' % (max_return * 100))
+    print('return (min) = %0.2f %%' % (min_return * 100))
+    print('return (mu) = %0.2f %%' % (mu * 100))
+    print('return (sigma) = %0.2f %%' % (sigma * 100))
+    print('history (len) = %d' % len(ds_by_s))
 
     # plot simulated geometric brownian motion
     CQF.plot_gbm(mu=mu, sigma=sigma, dt=dt, s0=s0, days=days_for_predict)
@@ -236,14 +235,14 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
 
     # length test
     if (days_for_test - days_for_statistic - days_for_predict) < 0:
-        print ('--- (days_for_test - days_for_statistic - days_for_predict) must bigger or equal to 0')
+        print('--- (days_for_test - days_for_statistic - days_for_predict) must bigger or equal to 0')
         return
     if len(hist) < (days_for_statistic + days_for_predict):
-        print ('--- not enough history data. hist:' + str(len(hist))
+        print('--- not enough history data. hist:' + str(len(hist))
                + ' at least:' + str(days_for_statistic + days_for_predict))
         return
     else:
-        print ('--- number of test: ' + str(len(hist) - days_for_statistic - days_for_predict + 1) + '\n')
+        print('--- number of test: ' + str(len(hist) - days_for_statistic - days_for_predict + 1) + '\n')
 
     # get predicts and facts
     predict_price = []
@@ -252,7 +251,7 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     fact_r = []
     p_values = []
     for i in range(len(hist) - days_for_statistic - days_for_predict + 1):  # i is test count [1,..)
-        print ('percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist) - days_for_statistic - days_for_predict + 1)))
+        print('percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist) - days_for_statistic - days_for_predict + 1)))
 
         sub_hist = hist[(days_for_predict + i):(days_for_statistic + days_for_predict + i)]  # hist[)
         s0 = hist.close.values[days_for_predict + i]
@@ -567,7 +566,7 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
         predict_prices = []
         p_values = []
         for i in range(len(hist_data) - days_for_statistic - days_for_predict + 1):  # i is test count [1,..)
-            print (
+            print(
                 'percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist_data) - days_for_statistic - days_for_predict + 1)))
 
             sub_hist = hist_data[(days_for_predict + i):(days_for_statistic + days_for_predict + i)]  # hist[)
