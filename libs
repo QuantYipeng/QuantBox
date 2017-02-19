@@ -1,0 +1,18 @@
+1.tushare (MAC)
+    Terminal:
+    sudo easy_install pip
+    sudo -s
+    pip install lxml
+    pip install pandas
+    pip install requests
+    pip install tushare
+    
+2.tushare (windows)
+    install easy_install.exe
+    CMD:
+    cd ...\Python\Python35\Scripts
+    easy_install pip
+    pip install pandas
+    pip install lxml
+    pip install requests
+    pip install requests
