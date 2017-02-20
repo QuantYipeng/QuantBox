@@ -218,13 +218,13 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
         ds_by_s = np.nan_to_num(ds_by_s)  # change nan to zero
 
         # get parameters
-        s0 = s.close.values[0]
+        s_0 = s.close.values[0]
         dt = 1.0 / len(ds_by_s.values)
         mu = np.mean(ds_by_s.values) / dt
         sigma = np.sqrt(np.var(ds_by_s.values)) / np.sqrt(dt)
 
         # calculate the expected return
-        expected_price = CQF.get_ep_of_mc_gbm(mu=mu, sigma=sigma, dt=dt, s0=s0, days=days,
+        expected_price = CQF.get_ep_of_mc_gbm(mu=mu, sigma=sigma, dt=dt, s0=s_0, days=days,
                                               simulation=simulation)
         return expected_price
 
