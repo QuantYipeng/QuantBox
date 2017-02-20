@@ -650,7 +650,7 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
     plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
     plt.title(code + '  with predicted future prices: [' + str(days_short_statistic) + ' to ' + str(
         days_short_predict) + '](red), [' + str(days_long_statistic) + ' to ' + str(
-        days_long_predict) + '](blue)\n<The Predicted Days Are Shown In Calendar Days Not In Trading Days>')
+        days_long_predict) + '](blue)\n<The Predicted Days Are Shown In Calendar Dates Not In Trading Dates>')
     plt.show()
 
     return
