@@ -2,9 +2,15 @@ import QuantCN as qc
 import numpy as np
 import matplotlib.pyplot as plt
 
-# qc.write_er_mc_gbm('/Users/yipengli/Documents/QuantLibData/20170216_5_60.npy', 5, 10000, 60)
-# qc.load_('/Users/yipengli/Documents/QuantLibData/20170216_5_60.npy', 0.05, 0.055)
+
+# qc.plot_history_close_line('300403', 365)
+# qc.plot_history_returns_movement('300403', 365)
+# qc.plot_history_returns_histogram('300403', 365)
+
 # qc.plot_candlestick('000514')
-# qc.predict('000514', 180, 365)
-qc.plot_predicts_and_facts('000514', 5, 26, 80)
-# qc.plot_candlestick_mc_gbm('000514', 200, 5, 12, 5, 26)
+# qc.plot_candlestick_mc_gbm('002034', 150, 5, 20, 10, 60)
+
+qc.plot_predicts_and_facts('000514', 150, 10, 60)
+# qc.plot_gbm_simulation('300403', 100, 365):
+# qc.write_all_history_data('data_0220.npy', 365)
+# qc.load_statistic('data_0220.npy', 5, 10000, 0.05, 0.055)
