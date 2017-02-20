@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tushare as ts
 import CQF
-
+import pickle
 
 def is_booming_stock(code='300403', days=365):
     # is this stock continuing raised 5 times?
@@ -33,7 +33,7 @@ def is_booming_stock(code='300403', days=365):
     return 0
 
 
-def get_er_of_mc_gbm(hist, days_for_predict=5, simulation=10000):
+def get_er_of_mc_gbm(hist, days_for_predict=5, simulation=5000):
     # get returns
     ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
         'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
@@ -72,7 +72,7 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def get_all_history_data(days=365):
+def write_all_history_data(file_name='data0220.pkl', days=365):
     # get stock names
     stock_info = ts.get_stock_basics()
 
@@ -88,6 +88,8 @@ def get_all_history_data(days=365):
     for i in stock_info.index:
         count += 1
         try:
+            if count == 10:
+                break
             # get data
             hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
             code.append(i)
@@ -98,19 +100,21 @@ def get_all_history_data(days=365):
 
     # write into files
     content = [code, data]
+    fn = file_name
+    with open(fn, 'w') as f:  # open file with write-mode
+        pickle.dump(content, f)  # serialize and save object
+    return
 
-    return content
 
+def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
+    fn = file_name
+    with open(fn, 'r') as f:
+        content = pickle.load(f)  # read file and build object
 
-def load_statistic(content, days_for_predict=5, simulation=10000, bottom=0.055, top=0.06):
-
-    def load_all_er_of_mc_gbm(_content, _days_for_predict=5, _simulation=10000):
+    def load_all_er_of_mc_gbm(_content, _days_for_predict=5, _simulation=5000):
         # get a list of all stocks' [code, expected return, p-value]
         _code = _content[0]
         _data = _content[1]
-
-        # get stock names
-        _stock_info = ts.get_stock_basics()
 
         # calculate the expected returns
         _c = []
@@ -127,7 +131,7 @@ def load_statistic(content, days_for_predict=5, simulation=10000, bottom=0.055, 
                 _p.append(_p_value)
                 print('...')
                 print('Current:    %d' % _count)
-                print('Total:      %d' % len(_stock_info))
+                print('Total:      %d' % len(_data))
                 print('Stock Code: %s' % _code[_i])
                 print('Expected R: %0.4f %%' % (_er * 100))
                 print('P-Value:    %0.4f %%' % (_p_value * 100))
@@ -215,7 +219,7 @@ def plot_gbm_simulation(code='300403', days_for_predict=100, days_for_statistic=
 
 
 def plot_predicts_and_facts(code='300403', days_for_test=365, days_for_predict=5, days_for_statistic=90,
-                            simulation=20000):
+                            simulation=5000):
     # days_for_predict is trading days
     # days_for_statistic is trading days
     # days_for_test is calendar days
@@ -618,7 +622,7 @@ def plot_candlestick_mc_gbm(code='300403', days_total=80, days_short_predict=5, 
                 'percent:%0.4f %%' % (100.0 * (1.0 + i) / (len(hist_data) - days_for_statistic + 1)))
 
             sub_hist = hist_data[i:(days_for_statistic + i)]  # hist[)
-            p = get_predict(sub_hist, days_for_predict, 10000)
+            p = get_predict(sub_hist, days_for_predict, 5000)
 
             predict_prices.insert(0, p)  # insert at beginning
             p_values.insert(0, CQF.get_p_value_of_normal_test(sub_hist.close.values))

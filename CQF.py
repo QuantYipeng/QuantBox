@@ -30,7 +30,7 @@ def plot_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, days=99):
     return
 
 
-def get_ep_of_mc_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, days=99, simulation=500):
+def get_ep_of_mc_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, days=99, simulation=5000):
     # type: (mu, sigma, dt, s0, days, simulation) -> mean
     m = []
     for i in range(simulation):
