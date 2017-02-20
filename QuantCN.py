@@ -390,7 +390,7 @@ def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statisti
     # adjust plot
     plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
     plt.title(code + ' p-values for predicted future days (green bar) [' + str(days_for_statistic) + ' to ' + str(
-        days_for_predict) + '] -- normal distribution test for ' + str(days_for_statistic) + ' days ')
+        days_for_predict) + '] -- normal distribution test for ' + str(days_for_predict) + ' days ')
 
     # plot ax 5 histogram
     fig.add_subplot(428)
