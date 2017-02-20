@@ -6,20 +6,31 @@ import tushare as ts
 import CQF
 
 
-def predict(c='300403', days_for_predict=5, days_for_statistic=90):
-    # print expected return on geometric brownian motion monte carlo simulation
+def is_booming_stock(code='300403', days=365):
+    # is this stock continuing raised 5 times?
+
     # get data
     today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days_for_statistic)).strftime('%Y-%m-%d')
-    hist = ts.get_h_data(c, start=one_year_before, end=today)  # reverse order (from now to past)
+    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
+    hist = ts.get_h_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
 
-    r, p = get_er_of_mc_gbm(hist, days_for_predict, 10000)
-    print('Stock:' + str(c) + ' Return:' + str(r) + ' P-value:' + str(p))
+    # get returns
+    ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
+        'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
+    ds_by_s = ds_by_s.sort_index(0)
+    ds_by_s = np.nan_to_num(ds_by_s)
 
-    # plot history candlestick
-    plot_candlestick(c, days_for_statistic)
+    is_booming = 0
+    for i in range(len(ds_by_s.values)):
+        if ds_by_s.values[i] > 0.09:
+            is_booming += 1
+        else:
+            is_booming = 0
 
-    return
+        if is_booming == 5:
+            print('stock:' + str(code) + ' is a booming stock')
+            return 1
+    return 0
 
 
 def get_er_of_mc_gbm(hist, days_for_predict=5, simulation=10000):
@@ -61,41 +72,6 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def load_all_er_of_mc_gbm(data_file='data_0220.npy', days_for_predict=5, simulation=10000):
-    # get a list of all stocks' [code, expected return, p-value]
-    code = (np.load(data_file))[0]
-    data = (np.load(data_file))[1]
-
-    # get stock names
-    stock_info = ts.get_stock_basics()
-
-    # calculate the expected returns
-    c = []
-    r = []
-    p = []
-    count = 0
-    for i in range(len(data)):
-        count += 1
-        try:
-            # get data
-            er, p_value = get_er_of_mc_gbm(data[i], days_for_predict, simulation)
-            r.append(er)
-            c.append(code[i])
-            p.append(p_value)
-            print('...')
-            print('Current:    %d' % count)
-            print('Total:      %d' % len(stock_info))
-            print('Stock Code: %s' % code[i])
-            print('Expected R: %0.4f %%' % (er * 100))
-            print('P-Value:    %0.4f %%' % (p_value * 100))
-        except:
-            continue
-
-    result = [c, r, p]
-
-    return result
-
-
 def write_all_history_data(file_name='data_0220.npy', days=365):
     # get stock names
     stock_info = ts.get_stock_basics()
@@ -111,6 +87,11 @@ def write_all_history_data(file_name='data_0220.npy', days=365):
     count = 0
     for i in stock_info.index:
         count += 1
+
+        # for test
+        if count == 50:
+            break
+
         try:
             # get data
             hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
@@ -127,7 +108,44 @@ def write_all_history_data(file_name='data_0220.npy', days=365):
     return
 
 
-def load_statistic(result, bottom=0.095, top=0.1):
+def load_statistic(data_file='data_0220.npy', days_for_predict=5, simulation=10000, bottom=0.055, top=0.06):
+
+    def load_all_er_of_mc_gbm(_data_file='data_0220.npy', _days_for_predict=5, _simulation=10000):
+        # get a list of all stocks' [code, expected return, p-value]
+        _code = (np.load(_data_file))[0]
+        _data = (np.load(_data_file))[1]
+
+        # get stock names
+        _stock_info = ts.get_stock_basics()
+
+        # calculate the expected returns
+        _c = []
+        _r = []
+        _p = []
+        _count = 0
+        for _i in range(len(_data)):
+            _count += 1
+            try:
+                # get data
+                _er, _p_value = get_er_of_mc_gbm(_data[_i], _days_for_predict, _simulation)
+                _c.append(_code[_i])
+                _r.append(_er)
+                _p.append(_p_value)
+                print('...')
+                print('Current:    %d' % _count)
+                print('Total:      %d' % len(_stock_info))
+                print('Stock Code: %s' % _code[_i])
+                print('Expected R: %0.4f %%' % (_er * 100))
+                print('P-Value:    %0.4f %%' % (_p_value * 100))
+            except:
+                continue
+
+        _result = [_c, _r, _p]
+
+        return _result
+
+    result = load_all_er_of_mc_gbm(data_file, days_for_predict, simulation)
+
     # load the stock codes
     c = result[0]
 
@@ -162,34 +180,7 @@ def load_statistic(result, bottom=0.095, top=0.1):
     return
 
 
-def is_booming_stock(code='300403', days=365):
-    # is this stock continuing raised 5 times?
-
-    # get data
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-    hist = ts.get_h_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
-
-    # get returns
-    ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
-        'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
-    ds_by_s = ds_by_s.sort_index(0)
-    ds_by_s = np.nan_to_num(ds_by_s)
-
-    is_booming = 0
-    for i in range(len(ds_by_s.values)):
-        if ds_by_s.values[i] > 0.09:
-            is_booming += 1
-        else:
-            is_booming = 0
-
-        if is_booming == 5:
-            print('stock:' + str(code) + ' is a booming stock')
-            return 1
-    return 0
-
-
-def plot_gbm(code='300403', days_for_predict=100, days_for_statistic=365):
+def plot_gbm_simulation(code='300403', days_for_predict=100, days_for_statistic=365):
     """
     plot a simulated geometric brownian motion of future close price of the given stock
     :param code: the code of stock
@@ -229,7 +220,7 @@ def plot_gbm(code='300403', days_for_predict=100, days_for_statistic=365):
     return
 
 
-def plot_predicts_and_facts(code='300403', days_for_predict=5, days_for_statistic=90, days_for_test=365,
+def plot_predicts_and_facts(code='300403', days_for_test=365, days_for_predict=5, days_for_statistic=90,
                             simulation=20000):
     # days_for_predict is trading days
     # days_for_statistic is trading days
