@@ -72,7 +72,7 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def write_all_history_data(file_name='data_0220.npy', days=365):
+def get_all_history_data(days=365):
     # get stock names
     stock_info = ts.get_stock_basics()
 
@@ -87,11 +87,6 @@ def write_all_history_data(file_name='data_0220.npy', days=365):
     count = 0
     for i in stock_info.index:
         count += 1
-
-        # for test
-        if count == 50:
-            break
-
         try:
             # get data
             hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
@@ -103,17 +98,16 @@ def write_all_history_data(file_name='data_0220.npy', days=365):
 
     # write into files
     content = [code, data]
-    np.save(file_name, content)
 
-    return
+    return content
 
 
-def load_statistic(data_file='data_0220.npy', days_for_predict=5, simulation=10000, bottom=0.055, top=0.06):
+def load_statistic(content, days_for_predict=5, simulation=10000, bottom=0.055, top=0.06):
 
-    def load_all_er_of_mc_gbm(_data_file='data_0220.npy', _days_for_predict=5, _simulation=10000):
+    def load_all_er_of_mc_gbm(_content, _days_for_predict=5, _simulation=10000):
         # get a list of all stocks' [code, expected return, p-value]
-        _code = (np.load(_data_file))[0]
-        _data = (np.load(_data_file))[1]
+        _code = _content[0]
+        _data = _content[1]
 
         # get stock names
         _stock_info = ts.get_stock_basics()
@@ -144,7 +138,7 @@ def load_statistic(data_file='data_0220.npy', days_for_predict=5, simulation=100
 
         return _result
 
-    result = load_all_er_of_mc_gbm(data_file, days_for_predict, simulation)
+    result = load_all_er_of_mc_gbm(content, days_for_predict, simulation)
 
     # load the stock codes
     c = result[0]

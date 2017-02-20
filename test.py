@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 # qc.plot_candlestick('000514')
 # qc.plot_candlestick_mc_gbm('002034', 150, 5, 20, 10, 60)
 
-qc.plot_predicts_and_facts('000514', 150, 10, 60)
+# qc.plot_predicts_and_facts('000514', 150, 10, 60)
 # qc.plot_gbm_simulation('300403', 100, 365):
-# qc.write_all_history_data('data_0220.npy', 365)
-# qc.load_statistic('data_0220.npy', 5, 10000, 0.05, 0.055)
+qc.load_statistic(qc.get_all_history_data(365), 5, 10000, 0.05, 0.055)
