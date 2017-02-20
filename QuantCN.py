@@ -8,7 +8,12 @@ import CQF
 
 def predict(c='300403', days_for_predict=5, days_for_statistic=90):
     # print expected return on geometric brownian motion monte carlo simulation
-    r, p = get_er_of_mt_gbm(c, days_for_predict, 20000, days_for_statistic)
+    # get data
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days_for_statistic)).strftime('%Y-%m-%d')
+    hist = ts.get_h_data(c, start=one_year_before, end=today)  # reverse order (from now to past)
+
+    r, p = get_er_of_mc_gbm(hist, days_for_predict, 10000)
     print('Stock:' + str(c) + ' Return:' + str(r) + ' P-value:' + str(p))
 
     # plot history candlestick
@@ -17,12 +22,7 @@ def predict(c='300403', days_for_predict=5, days_for_statistic=90):
     return
 
 
-def get_er_of_mt_gbm(code='300403', days_for_predict=5, simulation=20000, days_for_statistic=365):
-    # get data
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days_for_statistic)).strftime('%Y-%m-%d')
-    hist = ts.get_h_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
-
+def get_er_of_mc_gbm(hist, days_for_predict=5, simulation=10000):
     # get returns
     ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
         'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
@@ -61,62 +61,83 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def write_er_mc_gbm(file_name='20170215.npy', days_for_predict=5,
-                    simulation=20000, days_for_statistic=365):
-    """
-    calculate and write the expected returns after given days for all Chinese stock using Geometric
-    Brownian Motion Monte Carlo Simulation
-    :param file_name: file that storing [stock code, expected returns, p-values]
-    :param days_for_predict: days for predicting
-    :param simulation: how many times of simulation
-    :param days_for_statistic: days for statistic mu & sigma
-    :return:
-    """
+def load_all_er_of_mc_gbm(data_file='data_0220.npy', days_for_predict=5, simulation=10000):
+    # get a list of all stocks' [code, expected return, p-value]
+    code = (np.load(data_file))[0]
+    data = (np.load(data_file))[1]
+
     # get stock names
     stock_info = ts.get_stock_basics()
 
     # calculate the expected returns
-    r = []
     c = []
+    r = []
     p = []
     count = 0
-    for i in stock_info.index:
+    for i in range(len(data)):
         count += 1
         try:
-            er, p_value = get_er_of_mt_gbm(i, days_for_predict, simulation, days_for_statistic)
+            # get data
+            er, p_value = get_er_of_mc_gbm(data[i], days_for_predict, simulation)
             r.append(er)
-            c.append(i)
+            c.append(code[i])
             p.append(p_value)
             print('...')
             print('Current:    %d' % count)
             print('Total:      %d' % len(stock_info))
-            print('Stock Code: %s' % i)
+            print('Stock Code: %s' % code[i])
             print('Expected R: %0.4f %%' % (er * 100))
             print('P-Value:    %0.4f %%' % (p_value * 100))
         except:
             continue
 
-    # write returns & codes into files
-    content = [c, r, p]
+    result = [c, r, p]
+
+    return result
+
+
+def write_all_history_data(file_name='data_0220.npy', days=365):
+    # get stock names
+    stock_info = ts.get_stock_basics()
+
+    # set date
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime(
+        '%Y-%m-%d')
+
+    # calculate the expected returns
+    code = []
+    data = []
+    count = 0
+    for i in stock_info.index:
+        count += 1
+        try:
+            # get data
+            hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
+            code.append(i)
+            data.append(hist)
+            print('Process:  %0.2f %%' % (100.0*count/len(stock_info)))
+        except:
+            continue
+
+    # write into files
+    content = [code, data]
     np.save(file_name, content)
 
     return
 
 
-def load_(file_name='20170215.npy', bottom=0.095, top=0.1):
-    content = np.load(file_name)
-
+def load_statistic(result, bottom=0.095, top=0.1):
     # load the stock codes
-    c = content[0]
-    print(c)
+    c = result[0]
 
     # load the expected returns
-    r_str = content[1]
+    r_str = result[1]
     r = [float(x) for x in r_str]
     r = np.nan_to_num(r)  # use 0 to substitute nan
 
     # load the p values
-    p_str = content[2]
+    p_str = result[2]
     p = [float(x) for x in p_str]
 
     # get the stock codes of specific returns, the first dimension of index (index[0]) is the real indices
@@ -132,8 +153,11 @@ def load_(file_name='20170215.npy', bottom=0.095, top=0.1):
 
     string = "".join(strings)
 
+    '''
     f = open("data/temp.txt", 'w')
     print >> f, string
+    '''
+    print(string)
 
     return
 
