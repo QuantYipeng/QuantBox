@@ -88,8 +88,6 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
     for i in stock_info.index:
         count += 1
         try:
-            if count == 10:
-                break
             # get data
             hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
             code.append(i)
