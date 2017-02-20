@@ -31,7 +31,6 @@ def plot_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, days=99):
 
 
 def get_ep_of_mc_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, days=99, simulation=5000):
-    # type: (mu, sigma, dt, s0, days, simulation) -> mean
     m = []
     for i in range(simulation):
         # equation from CQF M1S4 page 12
@@ -40,6 +39,5 @@ def get_ep_of_mc_gbm(mu=-0.01120817537498, sigma=0.3, dt=1.0 / 250, s0=58.89, da
 
 
 def get_p_value_of_normal_test(list):
-    # type: (list) -> p_value_of_is_normal_distributed
     result = ss.normaltest(list)
     return result[1]

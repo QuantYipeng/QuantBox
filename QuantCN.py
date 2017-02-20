@@ -6,9 +6,9 @@ import tushare as ts
 import CQF
 import pickle
 
+
 def is_booming_stock(code='300403', days=365):
     # is this stock continuing raised 5 times?
-
     # get data
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
