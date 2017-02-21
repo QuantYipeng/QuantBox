@@ -92,7 +92,7 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
             hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
             code.append(i)
             data.append(hist)
-            print('Process:  %0.2f %%' % (100.0*count/len(stock_info)))
+            print('Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
         except:
             continue
 
@@ -127,12 +127,8 @@ def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000
                 _c.append(_code[_i])
                 _r.append(_er)
                 _p.append(_p_value)
-                print('...')
-                print('Current:    %d' % _count)
-                print('Total:      %d' % len(_data))
-                print('Stock Code: %s' % _code[_i])
-                print('Expected R: %0.4f %%' % (_er * 100))
-                print('P-Value:    %0.4f %%' % (_p_value * 100))
+                print('[ Process:  %0.2f %% ] Stock Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' % (
+                    (100.0 * _count / len(_data)), _code[_i], (_er * 100), (_p_value * 100)))
             except:
                 continue
 
@@ -171,9 +167,21 @@ def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000
     f = open("data/temp.txt", 'w')
     print >> f, string
     '''
-    print(string)
+    print('\n\n' + string)
 
-    return
+    return string
+
+
+def load_all_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000, bottom=0.05, gap=0.005, top=0.07):
+    result = []
+    for i in range(int((top-bottom)/gap)):
+        result.append(('[ Expected Returns from ' + str((bottom+gap*i)) + ' to ' + str((bottom+gap*(i+1))) + ' ]'))
+        result.append(load_statistic(file_name, days_for_predict, simulation, (bottom+gap*i), (bottom+gap*(i+1))))
+
+    for i in range(len(result)):
+        print result[i]
+
+    return result
 
 
 def plot_gbm_simulation(code='300403', days_for_predict=100, days_for_statistic=365):
