@@ -104,12 +104,12 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
     return
 
 
-def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
+def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
     fn = file_name
     with open(fn, 'r') as f:
         content = pickle.load(f)  # read file and build object
 
-    def load_all_er_of_mc_gbm(_content, _days_for_predict=5, _simulation=5000):
+    def get_all_er_of_mc_gbm(_content, _days_for_statistic, _days_for_predict=5, _simulation=5000):
         # get a list of all stocks' [code, expected return, p-value]
         _code = _content[0]
         _data = _content[1]
@@ -123,7 +123,7 @@ def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000
             _count += 1
             try:
                 # get data
-                _er, _p_value = get_er_of_mc_gbm(_data[_i], _days_for_predict, _simulation)
+                _er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
                 _c.append(_code[_i])
                 _r.append(_er)
                 _p.append(_p_value)
@@ -136,7 +136,7 @@ def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000
 
         return _result
 
-    result = load_all_er_of_mc_gbm(content, days_for_predict, simulation)
+    result = get_all_er_of_mc_gbm(content, days_for_statistic, days_for_predict, simulation)
 
     # load the stock codes
     c = result[0]
@@ -172,11 +172,11 @@ def load_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000
     return string
 
 
-def load_all_statistic(file_name='data0220.pkl', days_for_predict=5, simulation=5000, bottom=0.05, gap=0.005, top=0.07):
+def load_all_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.05, gap=0.005, top=0.07):
     result = []
     for i in range(int((top-bottom)/gap)):
         result.append(('[ Expected Returns from ' + str((bottom+gap*i)) + ' to ' + str((bottom+gap*(i+1))) + ' ]'))
-        result.append(load_statistic(file_name, days_for_predict, simulation, (bottom+gap*i), (bottom+gap*(i+1))))
+        result.append(load_statistic(file_name, days_for_statistic, days_for_predict, simulation, (bottom+gap*i), (bottom+gap*(i+1))))
 
     for i in range(len(result)):
         print result[i]
