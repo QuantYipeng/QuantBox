@@ -1,8 +1,10 @@
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
+from sklearn import preprocessing
 import datetime
 import tushare as ts
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def get_data(code='300403', days=200, l=1):
@@ -27,51 +29,71 @@ def get_data(code='300403', days=200, l=1):
                 ((hist['open'].values[i + j + 1] - hist['close'].values[i + j]) / hist['close'].values[i + j]))
             data[i].append(
                 ((hist['low'].values[i + j + 1] - hist['close'].values[i + j]) / hist['close'].values[i + j]))
-            # data[i].append(hist['close'].values[i + j])
+            data[i].append(hist['close'].values[i + j])
+
         # add label
         change = ((hist['close'].values[i + l + 1] - hist['close'].values[i + j]) / hist['close'].values[i + l])
-        if change > 0.05:
-            data[i].append(0)
-        else:
+        if change > 0.07:
             data[i].append(1)
-        if change > 0 and not change > 0.05:
-            data[i].append(0)
         else:
-            data[i].append(1)
-        if change < 0:
             data[i].append(0)
-        else:
+        if change > 0 and not change > 0.02:
             data[i].append(1)
+        else:
+            data[i].append(0)
+        if change < -0.04:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
     return data
 
 
-def dl(code='300403', days=200, l=3):
-    model = Sequential()
-    model.add(Dense(input_dim=l * 4, output_dim=32, init='uniform'))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(input_dim=32, output_dim=16, init='uniform'))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(input_dim=16, output_dim=3, init='uniform'))
-    model.add(Activation('softmax'))
+def dl(code='300403', days=200, l=3, test_ratio=0.9):
 
-    model.compile(loss='binary_crossentropy', optimizer='adam')
-
+    # get data
     data = get_data(code, days, l)
     data = np.array(data)
-    i_data = int(len(data) * 0.7)
-    i_label = int(l * 4)
+    i_data = int(len(data) * test_ratio)
+    i_label = int(l * 5)
+    input_dimension = l * 5
+    output_dimension = np.shape(data)[1] - i_label
     train_data = data[:i_data, :i_label]
     train_label = data[:i_data, i_label:]
     test_data = data[i_data:, :i_label]
     test_label = data[i_data:, i_label:]
+    # normalize using Z-score=(x-mu)/std
+    train_data = preprocessing.scale(train_data)
+    test_data = preprocessing.scale(test_data)
 
+
+    # initiate the model
+    model = Sequential()
+    model.add(Dense(output_dim=32, input_dim=input_dimension, init='uniform'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(output_dim=32, init='uniform'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(output_dim=32, init='uniform'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(output_dim=output_dimension, init='uniform'))
+    model.add(Activation('softmax'))
+
+    # Multilayer Perceptron (MLP) for multi-class softmax classification
+    model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+
+    # train the model
     model.fit(train_data, train_label, nb_epoch=80, batch_size=80, verbose=0)
-    # print model.evaluate(test_data, test_label)
-    print 'Predicted Label:\n'
-    print model.predict_classes(test_data)
-    print 'True Label:\n'
-    print test_label
+    predict = model.predict(test_data)
+    true = test_label
+    print predict
+
+    for i in range(np.shape(predict)[1]):
+        x = np.linspace(1, len(predict), len(predict))
+        plt.bar(x, true[:, i], alpha=0.5, color='r')
+        plt.bar(x, np.sqrt(predict[:, i]), alpha=0.5, color='g')
+        plt.show()
 
     return
