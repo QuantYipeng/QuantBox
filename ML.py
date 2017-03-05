@@ -50,6 +50,7 @@ def get_data(code='300403', days=200, l=1):
 
 
 def dl(code='300403', days=200, length=3, info_size=5, test_ratio=0.9):
+    # parameters:
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
 

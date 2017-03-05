@@ -13,4 +13,4 @@ import ML
 # qc.write_all_history_data('data0222.pkl', 365)
 # qc.load_statistic('data0222.pkl', 90, 5, 5000, 0.055, 0.06)
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
-ML.dl('000514', 180, 3, 5, 0.7)
+ML.dl('300403', 180, 3, 5, 0.7)
