@@ -169,7 +169,10 @@ def dl(code=['300403', '000001'], days=200, length=3, info_size=6, test_ratio=0.
         ax.grid(True)
         x = np.linspace(1, len(predict), len(predict))
         plt.bar(x, true[:, i], alpha=0.5, color='r')
-        plt.bar(x, predict[:, i], alpha=0.5, color='g')
+        if i == 1:
+            plt.bar(x, (predict[:, i]-predict[:, i+1]), alpha=0.5, color='g')
+        else:
+            plt.bar(x, predict[:, i], alpha=0.5, color='g')
     plt.show()
 
     return
