@@ -97,7 +97,8 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
             continue
 
     # write into files
-    content = [code, data]
+    content = dict(zip(code, data))
+
     fn = file_name
     with open(fn, 'w') as f:  # open file with write-mode
         pickle.dump(content, f)  # serialize and save object
