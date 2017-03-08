@@ -14,13 +14,22 @@ def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
         fn = data_file
         with open(fn, 'r') as f:
             content = pickle.load(f)  # read file and build object
+
+            temp = content.keys()
+            for t in temp:
+                if int(t) > 399000 and not int(t) > 399210:
+                    print t
+
             hist = content[code[0]]
             hist_index = content[code[1]]
     else:
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
         hist = ts.get_h_data(code[0], start=one_year_before, end=today)  # reverse order (from now to past)
-        hist_index = ts.get_h_data(code[1], start=one_year_before, end=today)  # reverse order (from now to past)
+        if code[1] == '000001' or code[1] == '399001':
+            hist_index = ts.get_h_data(code[1], index=True, start=one_year_before, end=today)  # reverse order (from now to past)
+        else:
+            hist_index = ts.get_h_data(code[1], start=one_year_before, end=today)
 
     # reverse data order
     hist = hist.sort_index(0)
