@@ -5,14 +5,22 @@ import datetime
 import tushare as ts
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
 
-def get_data(code='300403', days=200, l=1):
+def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
     # get data
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-    hist = ts.get_h_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
-    hist_index = ts.get_h_data('000001', start=one_year_before, end=today)  # reverse order (from now to past)
+    if len(data_file):
+        fn = data_file
+        with open(fn, 'r') as f:
+            content = pickle.load(f)  # read file and build object
+            hist = content[code[0]]
+            hist_index = content[code[1]]
+    else:
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
+        hist = ts.get_h_data(code[0], start=one_year_before, end=today)  # reverse order (from now to past)
+        hist_index = ts.get_h_data(code[1], start=one_year_before, end=today)  # reverse order (from now to past)
 
     # reverse data order
     hist = hist.sort_index(0)
@@ -94,13 +102,16 @@ def get_data(code='300403', days=200, l=1):
     return data
 
 
-def dl(code='300403', days=200, length=3, info_size=6, test_ratio=0.9):
+def dl(code=['300403', '000001'], days=200, length=3, info_size=6, test_ratio=0.9, data_file=''):
     # parameters:
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
 
     # get data
-    data = get_data(code, days, length)
+    if len(data_file):
+        data = get_data(code, days, length, data_file)
+    else:
+        data = get_data(code, days, length)
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
     i_label = int(length * info_size)
