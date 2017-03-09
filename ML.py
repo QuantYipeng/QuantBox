@@ -1,6 +1,5 @@
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
-from sklearn import preprocessing
 import datetime
 import tushare as ts
 import numpy as np

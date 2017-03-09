@@ -15,4 +15,4 @@ import ML
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
 # ML.dl(['000514', '399001'], days=365, length=15, info_size=13, test_ratio=0.8, data_file='data0308.pkl')
 ML.dl(['000514', '399001', '600340', '000732', '000002', '001979', '000926', '600649', '600048', '600240', '600007', '600823'],
-      days=365, length=15, label_size=4, test_ratio=0.9)
+      days=500, length=15, label_size=4, test_ratio=0.9)
