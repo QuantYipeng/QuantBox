@@ -73,6 +73,8 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
 
 
 def write_all_history_data(file_name='data0220.pkl', days=365):
+    # using get_h_hist to download
+
     # get stock names
     stock_info = ts.get_stock_basics()
 

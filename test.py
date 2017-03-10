@@ -2,6 +2,7 @@ import QuantCN as qc
 import numpy as np
 import matplotlib.pyplot as plt
 import ML
+import tushare as ts
 
 # qc.plot_history_close_line('300403', 365)
 # qc.plot_history_returns_movement('300403', 365)
@@ -13,6 +14,8 @@ import ML
 # qc.write_all_history_data('data0308.pkl', 365)
 # qc.load_statistic('data0222.pkl', 90, 5, 5000, 0.055, 0.06)
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
-# ML.dl(['000514', '399001'], days=365, length=15, info_size=13, test_ratio=0.8, data_file='data0308.pkl')
-ML.dl(['300403', '399001', '600828', '603817'],
-      days=90, length=5, label_size=4, test_ratio=0.8)
+# ML.download_data('data0310.pkl', 365)
+
+p = ['300403', '399001', '600828', '603817']
+# p = ts.get_stock_basics().index
+ML.dl(target='300403', pool=p, days=180, length=10, label_size=4, test_ratio=0.8, data_file='data0310.pkl')

@@ -5,11 +5,68 @@ import tushare as ts
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+from itertools import chain
 
 
-def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
+def download_data(file_name='data0309.pkl', days=365):
+    # using get_k_hist to download
+
+    # get stock names
+    stock_info = ts.get_stock_basics()
+
+    # set date
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime(
+        '%Y-%m-%d')
+
+    # calculate the expected returns
+    code = []
+    data = []
+    count = 0
+    for i in stock_info.index:
+        count += 1
+        try:
+            # get data
+            hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
+            code.append(i)
+            data.append(hist)
+            print('[Downloading Stocks]Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
+        except:
+            continue
+    count = 0
+    indices = ['000001', '399001', '399006']
+    for i in indices:
+        if i in code:
+            continue
+        count += 1
+        try:
+            # get data
+            hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
+            code.append(i)
+            data.append(hist)
+            print('[Downloading Indices]Process:  %0.2f %%' % (100.0 * count / len(indices)))
+        except:
+            continue
+
+    # write into files
+    content = dict(zip(code, data))
+
+    fn = file_name
+    with open(fn, 'w') as f:  # open file with write-mode
+        pickle.dump(content, f)  # serialize and save object
+    return
+
+
+def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_file=''):
     # parameters:
     # l = how many history days used in prediction
+    # days = how many calendar days of history data should we download
+    #   not calendar when using data_file, maybe short that calendar days
+
+    # get [target, related assets]
+    if target in pool:
+        pool.remove(target)
+    code = chain([target], pool)
 
     def is_index(_code='000001'):
         indices = ['000001', '399001', '399006']
@@ -23,20 +80,28 @@ def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
         fn = data_file
         with open(fn, 'r') as f:
             content = pickle.load(f)  # read file and build object
-            hist = content.values()
+            hist = []
+            for c in code:
+                try:
+                    hist.append(content[c][-days:])
+                except:
+                    print('cannot get data of ' + c)
     else:
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
         hist = []
+        count = 0
         for c in code:
-            if is_index(c):
-                hist.append(ts.get_h_data(c, index=True, start=one_year_before, end=today))  # reverse order
-            else:
-                hist.append(ts.get_h_data(c, start=one_year_before, end=today))  # reverse order (from now to past)
-
-    # reverse data order to (from past to now)
-    for i in range(len(hist)):
-        hist[i] = hist[i].sort_index(0)
+            try:
+                count += 1
+                print('Process:  %0.2f %%' % (100.0 * count / len(code)))
+                if is_index(c):
+                    hist.append(ts.get_k_data(c, index=True, start=one_year_before, end=today))
+                else:
+                    hist.append(ts.get_k_data(c, start=one_year_before, end=today))  # (past to now)
+                    # get_k_data's index start from the first trading day in the start year
+            except:
+                print('cannot get data of ' + c)
 
     # drop the unmatched data point
     def match(hist_a, hist_b):
@@ -86,17 +151,20 @@ def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
         if drop_b:
             drop_list.append(i)
     drop_list.reverse()
-    print('\ndrop: '+str(drop_list))
     for d in drop_list:
+        print('[missing too many days]: ' + hist[d]['code'].values[0])
         hist.pop(d)
 
     data = []
+    # for each sample
     for i in range(len(hist[0]) - (l + 1)):
+
         data.append([])
-        # add data
+        # for each data
         for j in range(l):
             # weekday at t+1
-            data[i].append(hist[0]['close'].index[i + j + 1].weekday())
+            data[i].append(
+                datetime.datetime.strptime(hist[0]['date'].values[i + j + 1].encode('utf-8'), "%Y-%m-%d").weekday())
 
             # past prices
             for h in hist:
@@ -109,12 +177,15 @@ def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
                     ((h['open'].values[i + j + 1] - h['close'].values[i + j]) / h['close'].values[i + j]))
                 data[i].append(
                     ((h['low'].values[i + j + 1] - h['close'].values[i + j]) / h['close'].values[i + j]))
+                # the yesterday's close
                 data[i].append(h['close'].values[i + j])
                 # volume at t+1
                 data[i].append(h['volume'].values[i + j + 1])
 
         # add label
-        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + j]) / hist[0]['close'].values[i + l])
+        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['open'].values[i + l + 1])
+                  / hist[0]['open'].values[i + l + 1])
+
         if change > 0.09:
             data[i].append(1)
         else:
@@ -138,16 +209,16 @@ def get_data(code=['300403', '000001'], days=200, l=1, data_file=''):
     return data
 
 
-def dl(code=['300403', '000001'], days=200, length=15, label_size=4, test_ratio=0.9, data_file=''):
+def dl(target='300403', pool=['300403', '000001'], days=200, length=15, label_size=4, test_ratio=0.9, data_file=''):
     # parameters:
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
 
     # get data
     if len(data_file):
-        data = get_data(code, days, length, data_file)
+        data = get_data(target, pool, days, length, data_file)
     else:
-        data = get_data(code, days, length)
+        data = get_data(target, pool, days, length)
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
     i_label = np.shape(data)[1] - label_size
@@ -163,10 +234,10 @@ def dl(code=['300403', '000001'], days=200, length=15, label_size=4, test_ratio=
             mean = np.mean(m[:, c])
             std = np.std(m[:, c])
             for r in range(np.shape(m)[0]):
-                m[r, c] = (m[r, c]-mean)/std
+                m[r, c] = (m[r, c] - mean) / std
+
     zscore(train_data)
     zscore(test_data)
-    print data[:10, :]
 
     # initiate the model
     model = Sequential()
