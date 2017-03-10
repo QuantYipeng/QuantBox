@@ -1,11 +1,11 @@
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation
 import datetime
 import tushare as ts
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-from itertools import chain
+from scipy.stats.stats import pearsonr
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation
 
 
 def download_data(file_name='data0309.pkl', days=365):
@@ -57,8 +57,9 @@ def download_data(file_name='data0309.pkl', days=365):
     return
 
 
-def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_file=''):
+def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, data_file=''):
     # parameters:
+    # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
     # days = how many calendar days of history data should we download
     #   not calendar when using data_file, maybe short that calendar days
@@ -66,8 +67,9 @@ def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_fil
     # get [target, related assets]
     if target in pool:
         pool.remove(target)
-    code = chain([target], pool)
+    code = [target] + pool
 
+    #
     def is_index(_code='000001'):
         indices = ['000001', '399001', '399006']
         for index in indices:
@@ -121,7 +123,7 @@ def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_fil
                 if exist == 0:
                     to_be_drop_a.append(hist_a.index[_i])
         nb_drop_a = len(to_be_drop_a)
-        if nb_drop_a > 10:
+        if nb_drop_a > 0:
             return hist_a, hist_b, True
         hist_a = hist_a.drop(to_be_drop_a, axis=0)
 
@@ -152,10 +154,36 @@ def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_fil
             drop_list.append(i)
     drop_list.reverse()
     for d in drop_list:
-        print('[missing too many days]: ' + hist[d]['code'].values[0])
         hist.pop(d)
 
+    # get corr
+    corr = []
+    for i in range(len(hist)):
+        corr.append(pearsonr(hist[0]['close'].values, hist[i]['close'].values)[0])
+    corr_dict = dict(zip(range(len(hist)), corr))
+
+    # sort by values: sorted(corr_dict.items(), key=lambda item: item[1])
+    # corr_index is the N asset's index with the biggest correlation
+    corr_index_top = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))[-n:, 0]
+    corr_index_bottom = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))[:n, 0]
+
+    corr_index = [corr_index_top, corr_index_bottom]
+    corr_index = (np.array(corr_index)).flatten().tolist()
+
+    # remove itself
+    if 0 in corr_index:
+        corr_index.remove(0)
+
+    # select the correlated N assets
+    print('\n[select the correlated N assets]')
+    temp_hist = [hist[0]]
+    for i in corr_index:
+        temp_hist.append(hist[int(i)])
+        print('- ' + str(hist[int(i)]['code'].values[0]) + ' corr: ' + str(corr_dict[int(i)]))
+    hist = temp_hist
+
     data = []
+    returns = []
     # for each sample
     for i in range(len(hist[0]) - (l + 1)):
 
@@ -183,20 +211,40 @@ def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_fil
                 data[i].append(h['volume'].values[i + j + 1])
 
         # add label
-        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['open'].values[i + l + 1])
-                  / hist[0]['open'].values[i + l + 1])
+        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
+                  / hist[0]['close'].values[i + l])
+
+        if change > 0:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change < 0:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change > 0.01:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change < -0.01:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change > 0.03:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change < -0.03:
+            data[i].append(1)
+        else:
+            data[i].append(0)
 
         if change > 0.09:
-            data[i].append(1)
-        else:
-            data[i].append(0)
-
-        if change > 0.005 and not change > 0.09:
-            data[i].append(1)
-        else:
-            data[i].append(0)
-
-        if change < 0 and not change < -0.09:
             data[i].append(1)
         else:
             data[i].append(0)
@@ -206,19 +254,23 @@ def get_data(target='300403', pool=['300403', '000001'], days=200, l=1, data_fil
         else:
             data[i].append(0)
 
-    return data
+        returns.append(change)
+
+    return data, returns
 
 
-def dl(target='300403', pool=['300403', '000001'], days=200, length=15, label_size=4, test_ratio=0.9, data_file=''):
+def dl(target='300403', pool=['300403', '000001'], n=10, days=200, length=15, label_size=4, test_ratio=0.9,
+       data_file=''):
     # parameters:
+    # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
 
     # get data
     if len(data_file):
-        data = get_data(target, pool, days, length, data_file)
+        data, returns = get_data(target, pool, n, days, length, data_file)
     else:
-        data = get_data(target, pool, days, length)
+        data, returns = get_data(target, pool, n, days, length)
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
     i_label = np.shape(data)[1] - label_size
@@ -227,6 +279,7 @@ def dl(target='300403', pool=['300403', '000001'], days=200, length=15, label_si
     train_label = data[:i_data, i_label:]
     test_data = data[i_data:, :i_label]
     test_label = data[i_data:, i_label:]
+    test_returns = returns[i_data:]
 
     # normalize using Z-score=(x-mu)/std
     def zscore(m):
@@ -267,6 +320,20 @@ def dl(target='300403', pool=['300403', '000001'], days=200, length=15, label_si
     predict = model.predict(test_data)
     true = test_label
 
+    type_1 = []  # incorrect rejection
+    type_2 = []  # incorrect accept
+    err = []
+    for i in range(np.shape(predict)[1]):
+        x1 = np.mean([x for x in (true[:, i] - predict[:, i]) if x > 0])
+        x2 = np.mean([x for x in (true[:, i] - predict[:, i]) if x < 0])
+        type_1.append(x1)
+        type_2.append(x2)
+        err.append(x1+abs(x2))
+
+    print type_1
+    print type_2
+    print err
+
     fig = plt.figure(figsize=(15, 4))
     for i in range(np.shape(predict)[1]):
         ax = fig.add_subplot(1, np.shape(predict)[1], (i + 1))
@@ -274,6 +341,7 @@ def dl(target='300403', pool=['300403', '000001'], days=200, length=15, label_si
         x = np.linspace(1, len(predict), len(predict))
         plt.bar(x, true[:, i], alpha=0.5, color='r')
         plt.bar(x, predict[:, i], alpha=0.5, color='g')
+        plt.plot(x, [x*10 for x in test_returns], alpha=0.5, color='k')
     plt.show()
 
-    return
+    return err, type_1, type_2

@@ -16,6 +16,10 @@ import tushare as ts
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
 # ML.download_data('data0310.pkl', 365)
 
-p = ['300403', '399001', '600828', '603817']
-# p = ts.get_stock_basics().index
-ML.dl(target='300403', pool=p, days=180, length=10, label_size=4, test_ratio=0.8, data_file='data0310.pkl')
+p = ts.get_stock_basics().index
+pl = []
+for i in range(len(p)):
+    pl.append(p[i])
+pl.append('399001')
+
+ML.dl(target='300403', pool=pl, n=10, days=90, length=3, label_size=8, test_ratio=0.7, data_file='data0310.pkl')
