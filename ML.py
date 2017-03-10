@@ -224,6 +224,16 @@ def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, da
         else:
             data[i].append(0)
 
+        if change > 0.005:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
+        if change < -0.005:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
         if change > 0.01:
             data[i].append(1)
         else:

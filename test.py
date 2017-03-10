@@ -22,4 +22,4 @@ for i in range(len(p)):
     pl.append(p[i])
 pl.append('399001')
 
-ML.dl(target='300403', pool=pl, n=10, days=90, length=3, label_size=8, test_ratio=0.7, data_file='data0310.pkl')
+ML.dl(target='300403', pool=pl, n=8, days=90, length=4, label_size=10, test_ratio=0.7, data_file='data0310.pkl')
