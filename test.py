@@ -17,5 +17,5 @@ import pickle
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
 # ML.download_data('data0310.pkl', 365)
 # ML.test_parameters('300403', 'data0310.pkl', 'record.pkl')
-ML.dl('002100', 20, 90, 5, 10, 0.9, 'data0310.pkl', True)
-# ML.test_parameters('002100')
+ML.dl('000514', 1, 60, 20, 10, 0.8, 'data0310.pkl', True)
+# ML.test_parameters('000514')

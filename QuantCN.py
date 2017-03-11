@@ -182,7 +182,7 @@ def load_all_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for
         result.append(load_statistic(file_name, days_for_statistic, days_for_predict, simulation, (bottom+gap*i), (bottom+gap*(i+1))))
 
     for i in range(len(result)):
-        print result[i]
+        print(result[i])
 
     return result
 

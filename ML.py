@@ -3,10 +3,10 @@ import tushare as ts
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import warnings
 from scipy.stats.stats import pearsonr
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
-import warnings
 
 
 def download_data(file_name='data0309.pkl', days=365):
@@ -352,9 +352,9 @@ def dl(target='300403', correlations=10, days=200, length=15, label_size=4, test
         type_2.append(x2)
         err.append(x1 + abs(x2))
 
-    print type_1
-    print type_2
-    print err
+    print(type_1)
+    print(type_2)
+    print(err)
 
     if show_figure:
         fig = plt.figure(figsize=(15, 4))
@@ -398,5 +398,5 @@ def test_parameters(target='300403',
             parameters['correlations'] = record[i]['correlations']
             parameters['days'] = record[i]['days']
             parameters['length'] = record[i]['length']
-    print parameters
+    print(parameters)
     return parameters
