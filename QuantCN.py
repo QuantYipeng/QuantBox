@@ -102,14 +102,14 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
     content = dict(zip(code, data))
 
     fn = file_name
-    with open(fn, 'w') as f:  # open file with write-mode
+    with open(fn, 'wb') as f:  # open file with write-mode
         pickle.dump(content, f)  # serialize and save object
     return
 
 
 def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
     fn = file_name
-    with open(fn, 'r') as f:
+    with open(fn, 'rb') as f:
         content = pickle.load(f)  # read file and build object
 
     def get_all_er_of_mc_gbm(_content, _days_for_statistic, _days_for_predict=5, _simulation=5000):

@@ -53,7 +53,7 @@ def download_data(file_name='data0309.pkl', days=365):
     content = dict(zip(code, data))
 
     fn = file_name
-    with open(fn, 'w') as f:  # open file with write-mode
+    with open(fn, 'wb') as f:  # open file with write-mode
         pickle.dump(content, f)  # serialize and save object
     return
 
@@ -76,7 +76,7 @@ def get_data(target='300403', correlations=10, days=200, l=1, data_file=''):
     # get data
     if len(data_file):
         fn = data_file
-        with open(fn, 'r') as f:
+        with open(fn, 'rb') as f:
             content = pickle.load(f)  # read file and build object
             hist = []
 
