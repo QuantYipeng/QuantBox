@@ -6,6 +6,7 @@ import pickle
 from scipy.stats.stats import pearsonr
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
+import warnings
 
 
 def download_data(file_name='data0309.pkl', days=365):
@@ -57,17 +58,12 @@ def download_data(file_name='data0309.pkl', days=365):
     return
 
 
-def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, data_file=''):
+def get_data(target='300403', correlations=10, days=200, l=1, data_file=''):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
     # days = how many calendar days of history data should we download
     #   not calendar when using data_file, maybe short that calendar days
-
-    # get [target, related assets]
-    if target in pool:
-        pool.remove(target)
-    code = [target] + pool
 
     #
     def is_index(_code='000001'):
@@ -83,6 +79,13 @@ def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, da
         with open(fn, 'r') as f:
             content = pickle.load(f)  # read file and build object
             hist = []
+
+            # get [target, related assets]
+            pool = content.keys()
+            if target in pool:
+                pool.remove(target)
+            code = [target] + pool
+
             for c in code:
                 try:
                     hist.append(content[c][-days:])
@@ -92,6 +95,17 @@ def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, da
         today = datetime.datetime.now().strftime('%Y-%m-%d')
         one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
         hist = []
+
+        # get [target, related assets]
+        pool_index = ts.get_stock_basics().index
+        pool = []
+        for i in range(len(pool_index)):
+            pool.append(pool_index[i])
+        pool.append('399001')
+        if target in pool:
+            pool.remove(target)
+        code = [target] + pool
+
         count = 0
         for c in code:
             try:
@@ -160,19 +174,17 @@ def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, da
     corr = []
     for i in range(len(hist)):
         corr.append(pearsonr(hist[0]['close'].values, hist[i]['close'].values)[0])
-    corr_dict = dict(zip(range(len(hist)), corr))
+    # ignore itself
+    corr_dict = dict(zip(range(len(hist))[1:], corr[1:]))
 
     # sort by values: sorted(corr_dict.items(), key=lambda item: item[1])
-    # corr_index is the N asset's index with the biggest correlation
-    corr_index_top = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))[-n:, 0]
-    corr_index_bottom = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))[:n, 0]
-
+    # corr_index is the N(correlations) asset's index with the biggest correlation (exclude itself)
+    # and the N/2 asset's index with the lowest correlation
+    corr_dict_sorted = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))
+    corr_index_bottom = corr_dict_sorted[-correlations:, 0].tolist()
+    corr_index_top = corr_dict_sorted[:correlations, 0].tolist()
     corr_index = [corr_index_top, corr_index_bottom]
-    corr_index = (np.array(corr_index)).flatten().tolist()
-
-    # remove itself
-    if 0 in corr_index:
-        corr_index.remove(0)
+    corr_index = [y for x in corr_index for y in x]
 
     # select the correlated N assets
     print('\n[select the correlated N assets]')
@@ -269,8 +281,8 @@ def get_data(target='300403', pool=['300403', '000001'], n=10, days=200, l=1, da
     return data, returns
 
 
-def dl(target='300403', pool=['300403', '000001'], n=10, days=200, length=15, label_size=4, test_ratio=0.9,
-       data_file=''):
+def dl(target='300403', correlations=10, days=200, length=15, label_size=4, test_ratio=0.9,
+       data_file='', show_figure=False):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # length = how many history days used in prediction
@@ -278,9 +290,9 @@ def dl(target='300403', pool=['300403', '000001'], n=10, days=200, length=15, la
 
     # get data
     if len(data_file):
-        data, returns = get_data(target, pool, n, days, length, data_file)
+        data, returns = get_data(target, correlations, days, length, data_file)
     else:
-        data, returns = get_data(target, pool, n, days, length)
+        data, returns = get_data(target, correlations, days, length)
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
     i_label = np.shape(data)[1] - label_size
@@ -338,20 +350,53 @@ def dl(target='300403', pool=['300403', '000001'], n=10, days=200, length=15, la
         x2 = np.mean([x for x in (true[:, i] - predict[:, i]) if x < 0])
         type_1.append(x1)
         type_2.append(x2)
-        err.append(x1+abs(x2))
+        err.append(x1 + abs(x2))
 
     print type_1
     print type_2
     print err
 
-    fig = plt.figure(figsize=(15, 4))
-    for i in range(np.shape(predict)[1]):
-        ax = fig.add_subplot(1, np.shape(predict)[1], (i + 1))
-        ax.grid(True)
-        x = np.linspace(1, len(predict), len(predict))
-        plt.bar(x, true[:, i], alpha=0.5, color='r')
-        plt.bar(x, predict[:, i], alpha=0.5, color='g')
-        plt.plot(x, [x*10 for x in test_returns], alpha=0.5, color='k')
-    plt.show()
+    if show_figure:
+        fig = plt.figure(figsize=(15, 4))
+        for i in range(np.shape(predict)[1]):
+            ax = fig.add_subplot(1, np.shape(predict)[1], (i + 1))
+            ax.grid(True)
+            x = np.linspace(1, len(predict), len(predict))
+            plt.bar(x, true[:, i], alpha=0.5, color='r')
+            plt.bar(x, predict[:, i], alpha=0.5, color='g')
+            plt.plot(x, [x * 10 for x in test_returns], alpha=0.5, color='k')
+        plt.show()
 
-    return err, type_1, type_2
+    return {'type_1': type_1, 'type_2': type_2, 'err': err}
+
+
+def test_parameters(target='300403',
+                    correlations=(1, 2, 3, 5, 10, 20),
+                    days=(60, 90, 120, 200),
+                    length=(2, 3, 4, 5, 7, 10, 15, 30), data_file='data0310.pkl'):
+    warnings.filterwarnings("ignore")
+    record = []
+    for i in correlations:
+        for j in days:
+            for k in length:
+                print('----- correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k) + ' -----result:')
+                result = dl(target=target,
+                            correlations=i,
+                            days=j,
+                            length=k,
+                            label_size=10,
+                            test_ratio=0.7,
+                            data_file=data_file,
+                            show_figure=False)
+                record.append({'correlations': i, 'days': j, 'length': k, 'result': result})
+    minimum = 2
+    parameters = {'correlations': 0, 'days': 0, 'length': 0}
+    for i in range(len(record)):
+        err = record[i]['result']['err'][0]
+        if err < minimum:
+            minimum = err
+            parameters['correlations'] = record[i]['correlations']
+            parameters['days'] = record[i]['days']
+            parameters['length'] = record[i]['length']
+    print parameters
+    return parameters
