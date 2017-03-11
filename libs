@@ -1,4 +1,4 @@
-1.tushare (MAC)
+1.libs (MAC)
     Terminal:
     sudo easy_install pip
     sudo -s
@@ -11,7 +11,7 @@
     pip install tensorflow
     pip install keras
     
-2.tushare (windows)
+2.libs (windows)
     install easy_install.exe
     CMD:
     cd ...\Python\Python35\Scripts
@@ -20,14 +20,10 @@
     pip install lxml
     pip install requests
     pip install tushare
-    pip install scipy
     pip install matplotlib
     pip install tensorflow
     pip install keras
-
-3.run pip and python (windows)
-    add PATH("...Python\Python35\Scripts;...Python\Python35")
+    pip insatll scipy‑0.19.0‑cp35‑cp35m‑win_amd64.whl (download from https://www.scipy.org/install.html)
     
-4.install scipy (windows)
-    https://www.scipy.org/install.html
-    http://python-xy.github.io/
+3.python PATH (windows)
+    add PATH("...Python\Python35\Scripts;...Python\Python35")
