@@ -1,9 +1,10 @@
-import QuantCN as qc
-import numpy as np
-import matplotlib.pyplot as plt
-import ML
 import tushare as ts
 import pickle
+import numpy as np
+import matplotlib.pyplot as plt
+import QuantCN as qc
+import ML
+
 
 # qc.plot_history_close_line('300403', 365)
 # qc.plot_history_returns_movement('300403', 365)
@@ -16,5 +17,6 @@ import pickle
 # qc.load_statistic('data0222.pkl', 90, 5, 5000, 0.055, 0.06)
 # qc.load_all_statistic('data0222.pkl', 90, 5, 5000, 0.03, 0.005, 0.05)
 # ML.download_data('data0310.pkl', 365)
-ML.dl('000514', 1, 60, 20, 10, 0.8, 'data0310.pkl', True)
 # ML.test_parameters('000514')
+ML.dl('002100', 20, 90, 5, 10, 0.8, 'data0310.pkl', True)
+
