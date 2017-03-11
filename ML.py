@@ -79,9 +79,8 @@ def get_data(target='300403', correlations=10, days=200, l=1, data_file=''):
         with open(fn, 'rb') as f:
             content = pickle.load(f)  # read file and build object
             hist = []
-
             # get [target, related assets]
-            pool = content.keys()
+            pool = list(content.keys())
             if target in pool:
                 pool.remove(target)
             code = [target] + pool
@@ -204,7 +203,7 @@ def get_data(target='300403', correlations=10, days=200, l=1, data_file=''):
         for j in range(l):
             # weekday at t+1
             data[i].append(
-                datetime.datetime.strptime(hist[0]['date'].values[i + j + 1].encode('utf-8'), "%Y-%m-%d").weekday())
+                datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d").weekday())
 
             # past prices
             for h in hist:
