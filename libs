@@ -6,6 +6,10 @@
     pip install pandas
     pip install requests
     pip install tushare
+    pip install scipy
+    pip install matplotlib
+    pip install tensorflow
+    pip install keras
     
 2.tushare (windows)
     install easy_install.exe
@@ -15,9 +19,14 @@
     pip install pandas
     pip install lxml
     pip install requests
-    pip install requests
+    pip install tushare
+    pip install scipy
+    pip install matplotlib
+    pip install tensorflow
+    pip install keras
 
 3.run pip and python (windows)
     add PATH("...Python\Python35\Scripts;...Python\Python35")
+    
 4.install scipy (windows)
     https://www.scipy.org/install.html
