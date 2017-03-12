@@ -8,21 +8,20 @@ import pickle
 
 
 def is_booming_stock(code='300403', days=365):
+    # for get_k_hist
     # is this stock continuing raised 5 times?
     # get data
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-    hist = ts.get_h_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
+    hist = ts.get_k_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
 
     # get returns
-    ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
+    ds_by_s = (hist['close'].shift(-1) - hist['close']) / hist[
         'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
-    ds_by_s = ds_by_s.sort_index(0)
     ds_by_s = np.nan_to_num(ds_by_s)
-
     is_booming = 0
-    for i in range(len(ds_by_s.values)):
-        if ds_by_s.values[i] > 0.09:
+    for i in range(len(ds_by_s)):
+        if ds_by_s[i] > 0.09:
             is_booming += 1
         else:
             is_booming = 0
@@ -35,14 +34,16 @@ def is_booming_stock(code='300403', days=365):
 
 def get_er_of_mc_gbm(hist, days_for_predict=5, simulation=5000):
     # get returns
-    ds_by_s = (hist['close'].shift(1) - hist['close']) / hist[
+    # for get_k_return
+
+    ds_by_s = (hist['close'].shift(-1) - hist['close']) / hist[
         'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
 
     # get parameters
-    s0 = hist.close.values[0]
-    dt = 1.0 / len(ds_by_s.values[1:])
-    mu = np.mean(ds_by_s.values[1:]) / dt
-    sigma = np.sqrt(np.var(ds_by_s.values[1:])) / np.sqrt(dt)
+    s0 = hist['close'].values[-1]
+    dt = 1.0 / len(ds_by_s.values[:-1])
+    mu = np.mean(ds_by_s.values[:-1]) / dt
+    sigma = np.sqrt(np.var(ds_by_s.values[:-1])) / np.sqrt(dt)
 
     # calculate the expected return
     expected_price = CQF.get_ep_of_mc_gbm(mu=mu, sigma=sigma, dt=dt, s0=s0, days=days_for_predict,
@@ -91,7 +92,7 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
         count += 1
         try:
             # get data
-            hist = ts.get_h_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
+            hist = ts.get_k_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
             code.append(i)
             data.append(hist)
             print('Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
@@ -108,30 +109,30 @@ def write_all_history_data(file_name='data0220.pkl', days=365):
 
 
 def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
+    # for get_k_hist
+
     fn = file_name
     with open(fn, 'rb') as f:
         content = pickle.load(f)  # read file and build object
 
     def get_all_er_of_mc_gbm(_content, _days_for_statistic, _days_for_predict=5, _simulation=5000):
-        # get a list of all stocks' [code, expected return, p-value]
-        _code = _content[0]
-        _data = _content[1]
-
         # calculate the expected returns
         _c = []
         _r = []
         _p = []
         _count = 0
-        for _i in range(len(_data)):
+        # for _i in range(len(_data)):
+        for key, value in _content.items():
             _count += 1
             try:
                 # get data
-                _er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
-                _c.append(_code[_i])
+                #_er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
+                _er, _p_value = get_er_of_mc_gbm(value[-_days_for_statistic:], days_for_predict, _simulation)
+                _c.append(key)
                 _r.append(_er)
                 _p.append(_p_value)
                 print('[ Process:  %0.2f %% ] Stock Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' % (
-                    (100.0 * _count / len(_data)), _code[_i], (_er * 100), (_p_value * 100)))
+                    (100.0 * _count / len(_content)), key, (_er * 100), (_p_value * 100)))
             except:
                 continue
 
@@ -171,8 +172,7 @@ def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_pre
     print >> f, string
     '''
     print('\n\n' + string)
-
-    return string
+    return dict(zip(c, p))
 
 
 def load_all_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.05, gap=0.005, top=0.07):
