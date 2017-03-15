@@ -9,13 +9,16 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 
 
-def z_score(m):
-    # normalize using Z-score=(x-mu)/std
+def pre_process(m):
+    # function: pre-process m using Z-score=(x-mu)/std for every column in m
+    # return: None
     for c in range(np.shape(m)[1]):
         mean = np.mean(m[:, c])
         std = np.std(m[:, c])
         for r in range(np.shape(m)[0]):
             m[r, c] = (m[r, c] - mean) / std
+    return
+
 
 def download_data(file_name='data0309.pkl', days=365):
     # using get_k_hist to download
@@ -28,7 +31,7 @@ def download_data(file_name='data0309.pkl', days=365):
     one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime(
         '%Y-%m-%d')
 
-    # calculate the expected returns
+    # download stocks data
     code = []
     data = []
     count = 0
@@ -42,20 +45,24 @@ def download_data(file_name='data0309.pkl', days=365):
             print('[Downloading Stocks]Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
         except:
             continue
+
+    # download indices data
     count = 0
     indices = ['000001', '399001', '399006']
     for i in indices:
         if i in code:
+            count += 1
             continue
-        count += 1
-        try:
-            # get data
-            hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
-            code.append(i)
-            data.append(hist)
-            print('[Downloading Indices]Process:  %0.2f %%' % (100.0 * count / len(indices)))
-        except:
-            continue
+        else:
+            count += 1
+            try:
+                # get data
+                hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
+                code.append(i)
+                data.append(hist)
+                print('[Downloading Indices]Process:  %0.2f %%' % (100.0 * count / len(indices)))
+            except:
+                continue
 
     # write into files
     content = dict(zip(code, data))
@@ -555,8 +562,8 @@ def dl(target='300403', correlations=10, days=200, length=15, label_size=10, tes
     test_returns = returns[i_data:]
 
     # normalize
-    z_score(train_data)
-    z_score(test_data)
+    pre_process(train_data)
+    pre_process(test_data)
 
     # initiate the model
     model = Sequential()
@@ -637,8 +644,8 @@ def dl_current(target='300403', correlations=10, days=200, length=15, label_size
     a.append(b)
     true = np.array(a)
     # normalize
-    z_score(train_data)
-    z_score(current)
+    pre_process(train_data)
+    pre_process(current)
 
     # initiate the model
     model = Sequential()
@@ -689,7 +696,8 @@ def test_parameters(target='300403',
     for i in correlations:
         for j in days:
             for k in length:
-                print('----- correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k) + ' -----result:')
+                print('----- correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k))
+                print('----- result:')
                 result = dl(target=target,
                             correlations=i,
                             days=j,
@@ -708,5 +716,4 @@ def test_parameters(target='300403',
             parameters['correlations'] = record[i]['correlations']
             parameters['days'] = record[i]['days']
             parameters['length'] = record[i]['length']
-    print(parameters)
     return parameters

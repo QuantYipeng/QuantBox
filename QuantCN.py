@@ -73,42 +73,19 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def write_all_history_data(file_name='data0220.pkl', days=365):
-    # using get_h_hist to download
-
-    # get stock names
-    stock_info = ts.get_stock_basics()
-
-    # set date
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime(
-        '%Y-%m-%d')
-
-    # calculate the expected returns
-    code = []
-    data = []
-    count = 0
-    for i in stock_info.index:
-        count += 1
-        try:
-            # get data
-            hist = ts.get_k_data(i, start=one_year_before, end=today)  # reverse order (from now to past)
-            code.append(i)
-            data.append(hist)
-            print('Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
-        except:
-            continue
-
-    # write into files
-    content = dict(zip(code, data))
-
-    fn = file_name
-    with open(fn, 'wb') as f:  # open file with write-mode
-        pickle.dump(content, f)  # serialize and save object
-    return
-
-
-def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.055, top=0.06):
+def get_stocks_of_gbm(file_name='data0220.pkl',
+                      days_for_statistic=90,
+                      days_for_predict=5,
+                      simulation=5000,
+                      bottom=0.055,
+                      top=0.06):
+    """
+    function: get the stock with p value using geometric brownian motion in the specific interval
+    return: a list of dict. which dict looks like
+    [{'code':'300403',
+      'return':0.01,
+      'p-value':0.05},]
+    """
     # for get_k_hist
 
     fn = file_name
@@ -126,7 +103,7 @@ def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_pre
             _count += 1
             try:
                 # get data
-                #_er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
+                # _er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
                 _er, _p_value = get_er_of_mc_gbm(value[-_days_for_statistic:], days_for_predict, _simulation)
                 _c.append(key)
                 _r.append(_er)
@@ -135,9 +112,7 @@ def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_pre
                     (100.0 * _count / len(_content)), key, (_er * 100), (_p_value * 100)))
             except:
                 continue
-
         _result = [_c, _r, _p]
-
         return _result
 
     result = get_all_er_of_mc_gbm(content, days_for_statistic, days_for_predict, simulation)
@@ -154,35 +129,50 @@ def load_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_pre
     p_str = result[2]
     p = [float(x) for x in p_str]
 
-    # get the stock codes of specific returns, the first dimension of index (index[0]) is the real indices
-    index = np.where((r > bottom) & (r < top))
-
-    strings = []
-    # print stock codes
-    for i in index[0]:
-        if is_booming_stock(c[i]) == 1:
-            continue
-        print('Stock:' + str(c[i]) + ' P-value:' + str(p[i]))
-        strings.append('Stock:' + str(c[i]) + ' P-value:' + str(p[i]) + '\n')
-
-    string = "".join(strings)
-
-    '''
-    f = open("data/temp.txt", 'w')
-    print >> f, string
-    '''
-    print('\n\n' + string)
-    return dict(zip(c, p))
-
-
-def load_all_statistic(file_name='data0220.pkl', days_for_statistic=90, days_for_predict=5, simulation=5000, bottom=0.05, gap=0.005, top=0.07):
+    # get the stocks in [bottom, top)
     result = []
-    for i in range(int((top-bottom)/gap)):
-        result.append(('[ Expected Returns from ' + str((bottom+gap*i)) + ' to ' + str((bottom+gap*(i+1))) + ' ]'))
-        result.append(load_statistic(file_name, days_for_statistic, days_for_predict, simulation, (bottom+gap*i), (bottom+gap*(i+1))))
+    for i in range(len(r)):
+        if bottom <= r[i] < top:
+            # if is_booming_stock(c[i]) == 1:
+            if 0:
+                continue
+            else:
+                print('--Code:' + str(c[i]) + '\n' +
+                      '  Return: ' + str(r[i]) + '\n' +
+                      '  P-value:' + str(p[i]))
+                result.append({'code': c[i], 'return': r[i], 'p-value': p[i]})
 
-    for i in range(len(result)):
-        print(result[i])
+    return result
+
+
+def get_stocks_of_gbm_in_intervals(file_name='data0310.pkl',
+                                   days_for_statistic=90,
+                                   days_for_predict=1,
+                                   simulation=5000,
+                                   bottom=0.005,
+                                   gap=0.005,
+                                   top=0.02):
+    """
+    function: get the stock with p value using geometric brownian motion in several interval
+    return: a list of dict. which dict looks like
+    [{'bottom':0.01,
+      'top':0.02,
+      'result':[{'code':'300403',
+                 'return':0.01,
+                 'p-value':0.05},]},]
+    """
+
+    result = []
+    for i in range(int((top - bottom) / gap)):
+        print('[ Expected Returns from ' + str((bottom + gap * i)) + ' to ' + str((bottom + gap * (i + 1))) + ' ]')
+        result.append({'bottom': (bottom + gap * i),
+                       'top': (bottom + gap * (i + 1)),
+                       'result': get_stocks_of_gbm(file_name,
+                                                   days_for_statistic,
+                                                   days_for_predict,
+                                                   simulation,
+                                                   (bottom + gap * i),
+                                                   (bottom + gap * (i + 1)))})
 
     return result
 
