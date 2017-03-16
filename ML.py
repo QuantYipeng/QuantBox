@@ -20,7 +20,7 @@ def pre_process(m):
     return
 
 
-def download_data(file_name='data0309.pkl', days=365):
+def download_data(file_name='data0309.pkl', calendar_days=365):
     # using get_k_hist to download
 
     # get stock names
@@ -28,7 +28,7 @@ def download_data(file_name='data0309.pkl', days=365):
 
     # set date
     today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime(
+    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime(
         '%Y-%m-%d')
 
     # download stocks data

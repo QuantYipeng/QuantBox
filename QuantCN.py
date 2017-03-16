@@ -7,18 +7,23 @@ import CQF
 import pickle
 
 
-def is_booming_stock(code='300403', days=365):
-    # for get_k_hist
-    # is this stock continuing raised 5 times?
-    # get data
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-    hist = ts.get_k_data(code, start=one_year_before, end=today)  # reverse order (from now to past)
+def is_booming_stock(file_name='data0316.pkl',
+                     code='300403',
+                     days_for_statistic=365):
+    """
+    (for get_k_hist)
+    is this stock continuing raised 5 times?
+    """
 
-    # get returns
+    fn = file_name
+    with open(fn, 'rb') as f:
+        content = pickle.load(f)  # read file and build object
+    hist = content[code][-days_for_statistic:]
+
     ds_by_s = (hist['close'].shift(-1) - hist['close']) / hist[
         'close']  # the return from today to tomorrow store in today in reverse order (from now to past)
     ds_by_s = np.nan_to_num(ds_by_s)
+
     is_booming = 0
     for i in range(len(ds_by_s)):
         if ds_by_s[i] > 0.09:
@@ -27,7 +32,8 @@ def is_booming_stock(code='300403', days=365):
             is_booming = 0
 
         if is_booming == 5:
-            print('stock:' + str(code) + ' is a booming stock')
+            print('- Code:   ' + str(code) + '\n' +
+                  '  Booming stock')
             return 1
     return 0
 
@@ -73,7 +79,7 @@ def get_p_value_of_normal_test_history_returns(code='300403', days=365):
     return result
 
 
-def get_stocks_of_gbm(file_name='data0220.pkl',
+def get_stocks_of_gbm(file_name='data0316.pkl',
                       days_for_statistic=90,
                       days_for_predict=5,
                       simulation=5000,
@@ -104,11 +110,11 @@ def get_stocks_of_gbm(file_name='data0220.pkl',
             try:
                 # get data
                 # _er, _p_value = get_er_of_mc_gbm(_data[_i][:_days_for_statistic], _days_for_predict, _simulation)
-                _er, _p_value = get_er_of_mc_gbm(value[-_days_for_statistic:], days_for_predict, _simulation)
+                _er, _p_value = get_er_of_mc_gbm(value[-_days_for_statistic:], _days_for_predict, _simulation)
                 _c.append(key)
                 _r.append(_er)
                 _p.append(_p_value)
-                print('[ Process:  %0.2f %% ] Stock Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' % (
+                print('[ GMB Monte Carlo:  %0.2f %% ] Stock Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' % (
                     (100.0 * _count / len(_content)), key, (_er * 100), (_p_value * 100)))
             except:
                 continue
@@ -130,14 +136,14 @@ def get_stocks_of_gbm(file_name='data0220.pkl',
     p = [float(x) for x in p_str]
 
     # get the stocks in [bottom, top)
+    print('[Refining Result] take off the booming stocks')
     result = []
     for i in range(len(r)):
         if bottom <= r[i] < top:
-            # if is_booming_stock(c[i]) == 1:
-            if 0:
+            if is_booming_stock(file_name, c[i], days_for_statistic) == 1:
                 continue
             else:
-                print('--Code:' + str(c[i]) + '\n' +
+                print('- Code:   ' + str(c[i]) + '\n' +
                       '  Return: ' + str(r[i]) + '\n' +
                       '  P-value:' + str(p[i]))
                 result.append({'code': c[i], 'return': r[i], 'p-value': p[i]})
