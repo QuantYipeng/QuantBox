@@ -54,7 +54,7 @@ def _get_p_value_of_normal_test(l):
     return result[1]
 
 
-def _is_booming_stock(file_name='data0316.pkl',
+def _is_booming_stock(content,
                       code='300403',
                       days_for_statistic=365):
     """
@@ -63,9 +63,7 @@ def _is_booming_stock(file_name='data0316.pkl',
     is this stock continuing raised 5 times?
     """
 
-    fn = file_name
-    with open(fn, 'rb') as f:
-        content = pickle.load(f)  # read file and build object
+    # content is load from dataxxxx.pkl which looks like {'300403':hist,'002727':hist, ...}
     hist = content[code][-days_for_statistic:]
 
     ds_by_s = (hist['close'].shift(-1) - hist['close']) / hist[
@@ -158,12 +156,13 @@ def plot_gbm_simulation(code='300403',
 
 
 def get_stocks_mc_gbm(hist_file='data0316.pkl',
-                      result_file='mc_gbm0316.pkl',
+                      result_file='gbm0316.pkl',
                       days_for_statistic=90,
                       days_for_predict=5,
                       simulation=5000,
                       bottom=0.055,
-                      top=0.06):
+                      top=0.06,
+                      p_value=0.1):
     """
     public
     (get_k_hist)
@@ -183,7 +182,6 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
         # calculate the expected returns
         _count = 0
         _raw_results = []
-        # for _i in range(len(_data)):
         for _key, _value in _content.items():
             # key: code, value: hist
             _count += 1
@@ -221,15 +219,17 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
     refined_results = []
     for raw_result in raw_results:
         if bottom <= raw_result['expected_return'] < top:
-            if _is_booming_stock(hist_file, raw_result['code'], days_for_statistic) == 1:
+            if _is_booming_stock(content, raw_result['code'], days_for_statistic) == 1:
                 print('[Refining Result] Code: %s is Booming Stock' % raw_result['code'])
-                continue
             else:
-                print('[Refining Result] Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' %
-                      (raw_result['code'],
-                       raw_result['expected_return'],
-                       raw_result['p_value']))
-                refined_results.append(raw_result)
+                if raw_result['p_value'] < p_value:
+                    print('[Refining Result] Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' %
+                          (raw_result['code'],
+                           raw_result['expected_return'],
+                           raw_result['p_value']))
+                    refined_results.append(raw_result)
+                else:
+                    print('[Refining Result] Code: %s is unstable' % raw_result['code'])
 
     # sort refined_results by 'expected_return'
     refined_results.sort(key=lambda k: (k.get('expected_return', 0)))

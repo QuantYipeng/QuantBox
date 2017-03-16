@@ -1,5 +1,4 @@
 import datetime
-import tushare as ts
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -9,7 +8,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 
 
-def pre_process(m):
+def _pre_process(m):
     # function: pre-process m using Z-score=(x-mu)/std for every column in m
     # return: None
     for c in range(np.shape(m)[1]):
@@ -20,65 +19,29 @@ def pre_process(m):
     return
 
 
-def get_leanring_data(target='300403', correlations=10, days=200, l=1, data_file=''):
+def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, data_file='data0316.pkl'):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
     # days = how many calendar days of history data should we download
     #   not calendar when using data_file, maybe short that calendar days
 
-    #
-    def is_index(_code='000001'):
-        indices = ['000001', '399001', '399006']
-        for index in indices:
-            if index == _code:
-                return True
-        return False
-
     # get data
-    if len(data_file):
-        fn = data_file
-        with open(fn, 'rb') as f:
-            content = pickle.load(f)  # read file and build object
-            hist = []
-            # get [target, related assets]
-            pool = list(content.keys())
-            if target in pool:
-                pool.remove(target)
-            code = [target] + pool
+    fn = data_file
+    with open(fn, 'rb') as f:
+        content = pickle.load(f)  # read file and build object
 
-            for c in code:
-                try:
-                    hist.append(content[c][-days:])
-                except:
-                    print('cannot get data of ' + c)
-    else:
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
-        one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-        hist = []
-
-        # get [target, related assets]
-        pool_index = ts.get_stock_basics().index
-        pool = []
-        for i in range(len(pool_index)):
-            pool.append(pool_index[i])
-        pool.append('399001')
-        if target in pool:
-            pool.remove(target)
-        code = [target] + pool
-
-        count = 0
-        for c in code:
-            try:
-                count += 1
-                print('Process:  %0.2f %%' % (100.0 * count / len(code)))
-                if is_index(c):
-                    hist.append(ts.get_k_data(c, index=True, start=one_year_before, end=today))
-                else:
-                    hist.append(ts.get_k_data(c, start=one_year_before, end=today))  # (past to now)
-                    # get_k_data's index start from the first trading day in the start year
-            except:
-                print('cannot get data of ' + c)
+    # get [target, related assets]
+    hist = []
+    pool = list(content.keys())
+    if target in pool:
+        pool.remove(target)
+    code = [target] + pool
+    for c in code:
+        try:
+            hist.append(content[c][-days:])
+        except:
+            print('cannot get data of ' + c)
 
     # drop the unmatched data point
     def match(hist_a, hist_b):
@@ -242,65 +205,29 @@ def get_leanring_data(target='300403', correlations=10, days=200, l=1, data_file
     return data, returns
 
 
-def get_current_data(target='300403', correlations=10, days=200, l=1, data_file=''):
+def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_file='data0316.pkl'):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
     # days = how many calendar days of history data should we download
     #   not calendar when using data_file, maybe short that calendar days
 
-    #
-    def is_index(_code='000001'):
-        indices = ['000001', '399001', '399006']
-        for index in indices:
-            if index == _code:
-                return True
-        return False
-
     # get data
-    if len(data_file):
-        fn = data_file
-        with open(fn, 'rb') as f:
-            content = pickle.load(f)  # read file and build object
-            hist = []
-            # get [target, related assets]
-            pool = list(content.keys())
-            if target in pool:
-                pool.remove(target)
-            code = [target] + pool
+    fn = data_file
+    with open(fn, 'rb') as f:
+        content = pickle.load(f)  # read file and build object
 
-            for c in code:
-                try:
-                    hist.append(content[c][-days:])
-                except:
-                    print('cannot get data of ' + c)
-    else:
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
-        one_year_before = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
-        hist = []
-
-        # get [target, related assets]
-        pool_index = ts.get_stock_basics().index
-        pool = []
-        for i in range(len(pool_index)):
-            pool.append(pool_index[i])
-        pool.append('399001')
-        if target in pool:
-            pool.remove(target)
-        code = [target] + pool
-
-        count = 0
-        for c in code:
-            try:
-                count += 1
-                print('Process:  %0.2f %%' % (100.0 * count / len(code)))
-                if is_index(c):
-                    hist.append(ts.get_k_data(c, index=True, start=one_year_before, end=today))
-                else:
-                    hist.append(ts.get_k_data(c, start=one_year_before, end=today))  # (past to now)
-                    # get_k_data's index start from the first trading day in the start year
-            except:
-                print('cannot get data of ' + c)
+    # get [target, related assets]
+    hist = []
+    pool = list(content.keys())
+    if target in pool:
+        pool.remove(target)
+    code = [target] + pool
+    for c in code:
+        try:
+            hist.append(content[c][-days:])
+        except:
+            print('cannot get data of ' + c)
 
     # drop the unmatched data point
     def match(hist_a, hist_b):
@@ -486,18 +413,25 @@ def get_current_data(target='300403', correlations=10, days=200, l=1, data_file=
     return data, current
 
 
-def dl(target='300403', correlations=10, days=200, length=15, label_size=10, test_ratio=0.9,
-       data_file='', show_figure=False):
-    # parameters:
-    # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
-    # length = how many history days used in prediction
-    # info_size = how many factors have been included in each history day
+def dl_back_test(target='300403',
+                 correlations=10,
+                 days=200,
+                 length=15,
+                 label_size=10,
+                 test_ratio=0.9,
+                 data_file='data0316.pkl',
+                 show_figure=False):
+    """
+    do back test
+    parameters:
+    n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
+    length = how many history days used in prediction
+    info_size = how many factors have been included in each history day
+    """
 
     # get data
-    if len(data_file):
-        data, returns = get_leanring_data(target, correlations, days, length, data_file)
-    else:
-        data, returns = get_leanring_data(target, correlations, days, length)
+    data, returns = _get_data_for_back_test(target, correlations, days, length, data_file)
+
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
     i_label = np.shape(data)[1] - label_size
@@ -509,8 +443,8 @@ def dl(target='300403', correlations=10, days=200, length=15, label_size=10, tes
     test_returns = returns[i_data:]
 
     # normalize
-    pre_process(train_data)
-    pre_process(test_data)
+    _pre_process(train_data)
+    _pre_process(test_data)
 
     # initiate the model
     model = Sequential()
@@ -568,7 +502,13 @@ def dl(target='300403', correlations=10, days=200, length=15, label_size=10, tes
     return {'type_1': type_1, 'type_2': type_2, 'err': err}
 
 
-def dl_current(target='300403', correlations=10, days=200, length=15, label_size=10, data_file='', show_figure=False):
+def dl_predict(target='300403',
+               correlations=10,
+               days=200,
+               length=15,
+               label_size=10,
+               data_file='',
+               show_figure=False):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # length = how many history days used in prediction
@@ -576,9 +516,9 @@ def dl_current(target='300403', correlations=10, days=200, length=15, label_size
 
     # get data
     if len(data_file):
-        data, current = get_current_data(target, correlations, days, length, data_file)
+        data, current = _get_data_for_predict(target, correlations, days, length, data_file)
     else:
-        data, current = get_current_data(target, correlations, days, length)
+        data, current = _get_data_for_predict(target, correlations, days, length)
     data = np.array(data)
     current = np.array(current)
 
@@ -591,8 +531,8 @@ def dl_current(target='300403', correlations=10, days=200, length=15, label_size
     a.append(b)
     true = np.array(a)
     # normalize
-    pre_process(train_data)
-    pre_process(current)
+    _pre_process(train_data)
+    _pre_process(current)
 
     # initiate the model
     model = Sequential()
@@ -634,10 +574,14 @@ def dl_current(target='300403', correlations=10, days=200, length=15, label_size
     return predict
 
 
-def test_parameters(target='300403',
-                    correlations=(1, 2, 3, 5, 10),
-                    days=(60, 90, 120, 200),
-                    length=(2, 3, 4, 5, 7, 10, 15), data_file='data0310.pkl'):
+def get_best_parameters(target='300403',
+                        correlations=(1, 2, 3, 5, 10),
+                        days=(60, 90, 120, 200),
+                        length=(2, 3, 4, 5, 7, 10, 15), data_file='data0310.pkl'):
+    """
+    get the best parameters for specific stock
+    return: parameters = {'target': target, 'correlations': 0, 'days': 0, 'length': 0}
+    """
     warnings.filterwarnings("ignore")
     record = []
     for i in correlations:
@@ -645,17 +589,17 @@ def test_parameters(target='300403',
             for k in length:
                 print('----- correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k))
                 print('----- result:')
-                result = dl(target=target,
-                            correlations=i,
-                            days=j,
-                            length=k,
-                            label_size=10,
-                            test_ratio=0.7,
-                            data_file=data_file,
-                            show_figure=False)
+                result = dl_back_test(target=target,
+                                      correlations=i,
+                                      days=j,
+                                      length=k,
+                                      label_size=10,
+                                      test_ratio=0.7,
+                                      data_file=data_file,
+                                      show_figure=False)
                 record.append({'correlations': i, 'days': j, 'length': k, 'result': result})
     minimum = 2
-    parameters = {'correlations': 0, 'days': 0, 'length': 0, 'target': target}
+    parameters = {'target': target, 'correlations': 0, 'days': 0, 'length': 0}
     for i in range(len(record)):
         err = record[i]['result']['err'][0]
         if err < minimum:
