@@ -20,59 +20,6 @@ def pre_process(m):
     return
 
 
-def download_data(file_name='data0309.pkl', calendar_days=365):
-    # using get_k_hist to download
-
-    # get stock names
-    stock_info = ts.get_stock_basics()
-
-    # set date
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime(
-        '%Y-%m-%d')
-
-    # download stocks data
-    code = []
-    data = []
-    count = 0
-    for i in stock_info.index:
-        count += 1
-        try:
-            # get data
-            hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
-            code.append(i)
-            data.append(hist)
-            print('[Downloading Stocks]Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
-        except:
-            continue
-
-    # download indices data
-    count = 0
-    indices = ['000001', '399001', '399006']
-    for i in indices:
-        if i in code:
-            count += 1
-            continue
-        else:
-            count += 1
-            try:
-                # get data
-                hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
-                code.append(i)
-                data.append(hist)
-                print('[Downloading Indices]Process:  %0.2f %%' % (100.0 * count / len(indices)))
-            except:
-                continue
-
-    # write into files
-    content = dict(zip(code, data))
-
-    fn = file_name
-    with open(fn, 'wb') as f:  # open file with write-mode
-        pickle.dump(content, f)  # serialize and save object
-    return
-
-
 def get_leanring_data(target='300403', correlations=10, days=200, l=1, data_file=''):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
