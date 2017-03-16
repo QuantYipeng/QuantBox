@@ -6,6 +6,7 @@ import warnings
 from scipy.stats.stats import pearsonr
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
+from tqdm import tqdm
 
 
 def _pre_process(m):
@@ -83,13 +84,15 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
 
     # match & drop
     drop_list = []
-    for i in range(len(hist)):
+    for i in tqdm(range(len(hist)), desc='[Matching & Dropping]'):
         if i == 0:
             continue
         hist[0], hist[i], drop_b = match(hist[0], hist[i])
         # if we too drop too many hist_a elements, then we will drop hist_b
         if drop_b:
             drop_list.append(i)
+
+    #
     drop_list.reverse()
     for d in drop_list:
         hist.pop(d)
@@ -115,7 +118,6 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
     temp_hist = [hist[0]]
     for i in corr_index:
         temp_hist.append(hist[int(i)])
-        print('- ' + str(hist[int(i)]['code'].values[0]) + ' corr: ' + str(corr_dict[int(i)]))
     hist = temp_hist
 
     data = []
@@ -269,7 +271,7 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
 
     # match & drop
     drop_list = []
-    for i in range(len(hist)):
+    for i in tqdm(range(len(hist)), desc='[Matching & Dropping]'):
         if i == 0:
             continue
         hist[0], hist[i], drop_b = match(hist[0], hist[i])
@@ -301,7 +303,6 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
     temp_hist = [hist[0]]
     for i in corr_index:
         temp_hist.append(hist[int(i)])
-        print('- ' + str(hist[int(i)]['code'].values[0]) + ' corr: ' + str(corr_dict[int(i)]))
     hist = temp_hist
 
     data = []
@@ -393,7 +394,6 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
             # weekday at t+1
             current[-1].append(
                 datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d").weekday())
-            print(datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d"))
             # past prices
             for h in hist:
                 # changes at t+1 with close at t
@@ -484,9 +484,20 @@ def dl_back_test(target='300403',
         type_2.append(x2)
         err.append(x1 + abs(x2))
 
-    print(type_1)
-    print(type_2)
-    print(err)
+    print('[Error Type 1] ', end='')
+    for i in type_1:
+        print('%0.2f  ' % i, end='')
+    print(' ')
+
+    print('[Error Type 2] ', end='')
+    for i in type_2:
+        print('%0.2f  ' % i, end='')
+    print(' ')
+
+    print('[Error Sum]    ', end='')
+    for i in err:
+        print('%0.2f  ' % i, end='')
+    print(' ')
 
     if show_figure:
         fig = plt.figure(figsize=(15, 4))
@@ -577,7 +588,7 @@ def dl_predict(target='300403',
 def get_best_parameters(target='300403',
                         correlations=(1, 2, 3, 5, 10),
                         days=(60, 90, 120, 200),
-                        length=(2, 3, 4, 5, 7, 10, 15), data_file='data0310.pkl'):
+                        length=(2, 3, 4, 5, 7, 10, 15), data_file='data0316.pkl'):
     """
     get the best parameters for specific stock
     return: parameters = {'target': target, 'correlations': 0, 'days': 0, 'length': 0}
@@ -587,8 +598,7 @@ def get_best_parameters(target='300403',
     for i in correlations:
         for j in days:
             for k in length:
-                print('----- correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k))
-                print('----- result:')
+                print('[correlations: ' + str(i) + ' days: ' + str(j) + ' length: ' + str(k) + ']')
                 result = dl_back_test(target=target,
                                       correlations=i,
                                       days=j,
@@ -600,7 +610,7 @@ def get_best_parameters(target='300403',
                 record.append({'correlations': i, 'days': j, 'length': k, 'result': result})
     minimum = 2
     parameters = {'target': target, 'correlations': 0, 'days': 0, 'length': 0}
-    for i in range(len(record)):
+    for i in tqdm(range(len(record)), desc='[Finding the Best Parameters]'):
         err = record[i]['result']['err'][0]
         if err < minimum:
             minimum = err

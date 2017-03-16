@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tushare as ts
 import pickle
-
+from tqdm import tqdm
 
 def download(file_name='data0309.pkl', calendar_days=365):
     # using get_k_hist to download
@@ -20,33 +20,27 @@ def download(file_name='data0309.pkl', calendar_days=365):
     # download stocks data
     code = []
     data = []
-    count = 0
-    for i in stock_info.index:
-        count += 1
+
+    for i in tqdm(stock_info.index, desc='[Downloading Stocks]'):
         try:
             # get data
             hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
             code.append(i)
             data.append(hist)
-            print('[Downloading Stocks]Process:  %0.2f %%' % (100.0 * count / len(stock_info)))
         except:
             continue
 
     # download indices data
-    count = 0
     indices = ['000001', '399001', '399006']
-    for i in indices:
+    for i in tqdm(indices, desc='[Downloading Indices]'):
         if i in code:
-            count += 1
             continue
         else:
-            count += 1
             try:
                 # get data
                 hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
                 code.append(i)
                 data.append(hist)
-                print('[Downloading Indices]Process:  %0.2f %%' % (100.0 * count / len(indices)))
             except:
                 continue
 
