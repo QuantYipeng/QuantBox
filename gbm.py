@@ -6,6 +6,8 @@ import datetime
 import numpy as np
 import pickle
 import tushare as ts
+import warnings
+from tqdm import tqdm
 
 
 def _phi(n=12):
@@ -45,7 +47,7 @@ def _get_ep_of_mc_gbm(mu=-0.011,
     m = []
     for i in range(simulation):
         # equation from CQF M1S4 page 12
-        m.append(s0 * np.exp((mu-1/2*np.square(sigma)) * (days*dt) + sigma * _phi() * np.sqrt(days * dt)))
+        m.append(s0 * np.exp((mu - 1 / 2 * np.square(sigma)) * (days * dt) + sigma * _phi() * np.sqrt(days * dt)))
     return np.mean(m)
 
 
@@ -155,14 +157,14 @@ def plot_gbm_simulation(code='300403',
     return
 
 
-def get_stocks_mc_gbm(hist_file='data0316.pkl',
-                      result_file='gbm0316.pkl',
-                      days_for_statistic=90,
+def get_stocks_mc_gbm(hist_file='hist0316.pkl',
+                      gbm_file='gbm0316.pkl',
+                      days_for_statistic=60,
                       days_for_predict=5,
                       simulation=5000,
-                      bottom=0.055,
-                      top=0.06,
-                      p_value=0.1):
+                      bottom=0.1,
+                      top=0.2,
+                      p_value=0.05):
     """
     public
     (get_k_hist)
@@ -172,7 +174,7 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
       'return':0.01,
       'p-value':0.05},]
     """
-    # for get_k_hist
+    warnings.filterwarnings("ignore")
 
     fn = hist_file
     with open(fn, 'rb') as f:
@@ -182,7 +184,7 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
         # calculate the expected returns
         _count = 0
         _raw_results = []
-        for _key, _value in _content.items():
+        for _key, _value in tqdm(_content.items(), desc='[GMB Monte Carlo]'):
             # key: code, value: hist
             _count += 1
             _raw_result = {}
@@ -198,13 +200,6 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
                 _raw_result['expected_return'] = np.nan_to_num(_raw_result['expected_return'])
                 _raw_result['p_value'] = np.nan_to_num(_raw_result['p_value'])
 
-                # print log
-                print('[GMB Monte Carlo:  %0.2f %%] Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' %
-                      ((100.0 * _count / len(_content)),
-                       (_raw_result['code']),
-                       (_raw_result['expected_return'] * 100),
-                       (_raw_result['p_value'] * 100)))
-
                 # add into results
                 _raw_results.append(_raw_result)
 
@@ -215,32 +210,26 @@ def get_stocks_mc_gbm(hist_file='data0316.pkl',
     raw_results = get_all_er_of_mc_gbm(content, days_for_statistic, days_for_predict, simulation)
 
     # get the stocks in [bottom, top)
-    print('[Refining Result] taking off the booming stocks')
     refined_results = []
     for raw_result in raw_results:
         if bottom <= raw_result['expected_return'] < top:
             if _is_booming_stock(content, raw_result['code'], days_for_statistic) == 1:
-                print('[Refining Result] Code: %s is Booming Stock' % raw_result['code'])
+                pass  # booming
             else:
                 if raw_result['p_value'] < p_value:
-                    print('[Refining Result] Code: %s, Expected Return: %0.4f %%, P-Value: %0.4f %%' %
-                          (raw_result['code'],
-                           raw_result['expected_return'],
-                           raw_result['p_value']))
                     refined_results.append(raw_result)
                 else:
-                    print('[Refining Result] Code: %s is unstable' % raw_result['code'])
+                    pass  # unstable
 
     # sort refined_results by 'expected_return'
     refined_results.sort(key=lambda k: (k.get('expected_return', 0)))
 
-    print('[Final Result]')
+    # store the results
+    with open(gbm_file, 'wb') as f:  # open file with write-mode
+        pickle.dump(refined_results, f)  # serialize and save object
+
+    print('[Final Results]')
     for x in refined_results:
         print(x)
-
-    # store the results
-    fn = result_file
-    with open(fn, 'wb') as f:  # open file with write-mode
-        pickle.dump(refined_results, f)  # serialize and save object
 
     return refined_results

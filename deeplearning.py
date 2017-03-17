@@ -20,7 +20,7 @@ def _pre_process(m):
     return
 
 
-def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, data_file='data0316.pkl'):
+def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, data_file='hist0316.pkl'):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
@@ -45,7 +45,7 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
             print('cannot get data of ' + c)
 
     # drop the unmatched data point
-    def match(hist_a, hist_b):
+    def _match_trim_b(hist_a, hist_b):
         # return:
         # hist_a, hist_b, is_too_many_a_dropped (If True -> drop hist_b)
 
@@ -84,10 +84,10 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
 
     # match & drop
     drop_list = []
-    for i in tqdm(range(len(hist)), desc='[Matching & Dropping]'):
+    for i in tqdm(range(len(hist)), desc=('[Matching & Dropping for ' + target + ']')):
         if i == 0:
             continue
-        hist[0], hist[i], drop_b = match(hist[0], hist[i])
+        hist[0], hist[i], drop_b = _match_trim_b(hist[0], hist[i])
         # if we too drop too many hist_a elements, then we will drop hist_b
         if drop_b:
             drop_list.append(i)
@@ -114,7 +114,6 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
     corr_index = [y for x in corr_index for y in x]
 
     # select the correlated N assets
-    print('\n[select the correlated N assets]')
     temp_hist = [hist[0]]
     for i in corr_index:
         temp_hist.append(hist[int(i)])
@@ -207,7 +206,7 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
     return data, returns
 
 
-def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_file='data0316.pkl'):
+def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, hist_file='hist0316.pkl'):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # l = how many history days used in prediction
@@ -215,8 +214,7 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
     #   not calendar when using data_file, maybe short that calendar days
 
     # get data
-    fn = data_file
-    with open(fn, 'rb') as f:
+    with open(hist_file, 'rb') as f:
         content = pickle.load(f)  # read file and build object
 
     # get [target, related assets]
@@ -232,7 +230,7 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
             print('cannot get data of ' + c)
 
     # drop the unmatched data point
-    def match(hist_a, hist_b):
+    def _match_trim_b(hist_a, hist_b):
         # return:
         # hist_a, hist_b, is_too_many_a_dropped (If True -> drop hist_b)
 
@@ -271,10 +269,10 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
 
     # match & drop
     drop_list = []
-    for i in tqdm(range(len(hist)), desc='[Matching & Dropping]'):
+    for i in tqdm(range(len(hist)), desc=('[Matching & Dropping for ' + target + ']')):
         if i == 0:
             continue
-        hist[0], hist[i], drop_b = match(hist[0], hist[i])
+        hist[0], hist[i], drop_b = _match_trim_b(hist[0], hist[i])
         # if we too drop too many hist_a elements, then we will drop hist_b
         if drop_b:
             drop_list.append(i)
@@ -299,7 +297,6 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
     corr_index = [y for x in corr_index for y in x]
 
     # select the correlated N assets
-    print('\n[select the correlated N assets]')
     temp_hist = [hist[0]]
     for i in corr_index:
         temp_hist.append(hist[int(i)])
@@ -394,6 +391,7 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
             # weekday at t+1
             current[-1].append(
                 datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d").weekday())
+
             # past prices
             for h in hist:
                 # changes at t+1 with close at t
@@ -409,7 +407,6 @@ def _get_data_for_predict(target='300403', correlations=10, days=200, l=1, data_
                 current[-1].append(h['close'].values[i + j])
                 # volume at t+1
                 current[-1].append(h['volume'].values[i + j + 1])
-    print(current)
     return data, current
 
 
@@ -419,7 +416,7 @@ def dl_back_test(target='300403',
                  length=15,
                  label_size=10,
                  test_ratio=0.9,
-                 data_file='data0316.pkl',
+                 hist_file='hist0316.pkl',
                  show_figure=False):
     """
     do back test
@@ -428,9 +425,10 @@ def dl_back_test(target='300403',
     length = how many history days used in prediction
     info_size = how many factors have been included in each history day
     """
+    warnings.filterwarnings("ignore")
 
     # get data
-    data, returns = _get_data_for_back_test(target, correlations, days, length, data_file)
+    data, returns = _get_data_for_back_test(target, correlations, days, length, hist_file)
 
     data = np.array(data)
     i_data = int(len(data) * test_ratio)
@@ -501,6 +499,9 @@ def dl_back_test(target='300403',
 
     if show_figure:
         fig = plt.figure(figsize=(15, 4))
+        mapping = {0: '> 0 %', 1: '< 0 %', 2: '> 0.5 %', 3: '< -0.5 %',
+                   4: '> 1 %', 5: '< -1 %', 6: '> 3 %', 7: '< -3 %',
+                   8: '> 9 %', 9: '< -9 %'}
         for i in range(np.shape(predict)[1]):
             ax = fig.add_subplot(1, np.shape(predict)[1], (i + 1))
             ax.grid(True)
@@ -508,6 +509,7 @@ def dl_back_test(target='300403',
             plt.bar(x, true[:, i], alpha=0.5, color='r')
             plt.bar(x, predict[:, i], alpha=0.5, color='g')
             plt.plot(x, [x * 10 for x in test_returns], alpha=0.5, color='k')
+            plt.title(mapping[i])
         plt.show()
 
     return {'type_1': type_1, 'type_2': type_2, 'err': err}
@@ -518,18 +520,16 @@ def dl_predict(target='300403',
                days=200,
                length=15,
                label_size=10,
-               data_file='',
+               hist_file='hist0306.pkl',
                show_figure=False):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
+    warnings.filterwarnings("ignore")
 
     # get data
-    if len(data_file):
-        data, current = _get_data_for_predict(target, correlations, days, length, data_file)
-    else:
-        data, current = _get_data_for_predict(target, correlations, days, length)
+    data, current = _get_data_for_predict(target, correlations, days, length, hist_file)
     data = np.array(data)
     current = np.array(current)
 
@@ -537,10 +537,13 @@ def dl_predict(target='300403',
     output_dimension = np.shape(data)[1] - i_label
     train_data = data[:, :i_label]
     train_label = data[:, i_label:]
+
+    # get true label (the last true label is the predicted label showing as 0)
     a = data[-9:, i_label:].tolist()
-    b = np.zeros(label_size).tolist()
+    b = np.zeros(label_size).tolist()  # predicted label
     a.append(b)
     true = np.array(a)
+
     # normalize
     _pre_process(train_data)
     _pre_process(current)
@@ -572,28 +575,58 @@ def dl_predict(target='300403',
     # predict
     predict = model.predict(current)
 
+    # get the errors
+    type_1 = []  # incorrect rejection
+    type_2 = []  # incorrect accept
+    err = []
+    for i in range(np.shape(predict)[1]):
+        x1 = np.mean([x for x in (true[:-1, i] - predict[:-1, i]) if x > 0])
+        x2 = np.mean([x for x in (true[:-1, i] - predict[:-1, i]) if x < 0])
+        type_1.append(x1)
+        type_2.append(x2)
+        err.append(x1 + abs(x2))
+    type_1 = np.nan_to_num(type_1)
+    type_2 = np.nan_to_num(type_2)
+    err = np.nan_to_num(err)
+
     if show_figure:
         fig = plt.figure(figsize=(15, 4))
+        mapping = {0: '> 0 %', 1: '< 0 %', 2: '> 0.5 %', 3: '< -0.5 %',
+                   4: '> 1 %', 5: '< -1 %', 6: '> 3 %', 7: '< -3 %',
+                   8: '> 9 %', 9: '< -9 %'}
         for i in range(np.shape(predict)[1]):
             ax = fig.add_subplot(1, np.shape(predict)[1], (i + 1))
             ax.grid(True)
             x = np.linspace(1, len(predict), len(predict))
             plt.bar(x, true[:, i], alpha=0.5, color='r')
-            plt.bar(x, predict[:, i], alpha=0.5, color='b')
+            plt.bar(x[:-1], predict[:-1, i], alpha=0.5, color='b')
+            plt.bar(x[-1], predict[-1, i], alpha=1, color='k')
+            plt.title(mapping[i])
         plt.show()
 
-    return predict
+    expected_movement = + 0.0025 * predict[-1, 0] \
+                        - 0.0025 * predict[-1, 1] \
+                        + 0.0075 * predict[-1, 2] \
+                        - 0.0075 * predict[-1, 3] \
+                        + 0.015 * predict[-1, 4] \
+                        - 0.015 * predict[-1, 5] \
+                        + 0.06 * predict[-1, 6] \
+                        - 0.06 * predict[-1, 7] \
+                        + 0.095 * predict[-1, 8] \
+                        - 0.095 * predict[-1, 9]
+    return expected_movement, np.mean(type_1), np.mean(type_2), np.mean(err)
 
 
 def get_best_parameters(target='300403',
                         correlations=(1, 2, 3, 5, 10),
                         days=(60, 90, 120, 200),
-                        length=(2, 3, 4, 5, 7, 10, 15), data_file='data0316.pkl'):
+                        length=(2, 3, 4, 5, 7, 10, 15), hist_file='hist0316.pkl'):
     """
     get the best parameters for specific stock
     return: parameters = {'target': target, 'correlations': 0, 'days': 0, 'length': 0}
     """
     warnings.filterwarnings("ignore")
+
     record = []
     for i in correlations:
         for j in days:
@@ -605,7 +638,7 @@ def get_best_parameters(target='300403',
                                       length=k,
                                       label_size=10,
                                       test_ratio=0.7,
-                                      data_file=data_file,
+                                      hist_file=hist_file,
                                       show_figure=False)
                 record.append({'correlations': i, 'days': j, 'length': k, 'result': result})
     minimum = 2
@@ -618,3 +651,34 @@ def get_best_parameters(target='300403',
             parameters['days'] = record[i]['days']
             parameters['length'] = record[i]['length']
     return parameters
+
+
+def get_stocks_mc_gbm_dl(hist_file='data0316.pkl', gbm_file='gbm0316.pkl'):
+    # 1. low error means history is learn-able,
+    #    which also indicates that the history has been recurring
+    # 2. low probability means the this situation is not in history
+    # 3. the less the red, the better the prediction
+
+    with open(gbm_file, 'rb') as f:
+        content = pickle.load(f)  # read file and build object
+    results = []
+    for i in range(len(content)):
+        print('[Processing] ' + str(i + 1) + ' of ' + str(len(content)))
+        expected_return, type1, type2, err = dl_predict(target=content[i]['code'],
+                                                        correlations=10,
+                                                        days=500,
+                                                        length=15,
+                                                        label_size=10,
+                                                        hist_file=hist_file,
+                                                        show_figure=False)
+        results.append({'code': content[i]['code'],
+                        'E_return_1d': expected_return,
+                        'type1': type1,
+                        'type2': type2,
+                        'err': err,
+                        'E_return_1w': content[i]['expected_return'],
+                        'p_value': content[i]['p_value']})
+    results.sort(key=lambda k: (k.get('E_return_1d', 0)))
+
+    for result in results:
+        print(result)

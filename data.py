@@ -6,6 +6,7 @@ import tushare as ts
 import pickle
 from tqdm import tqdm
 
+
 def download(file_name='data0309.pkl', calendar_days=365):
     # using get_k_hist to download
 
@@ -14,7 +15,7 @@ def download(file_name='data0309.pkl', calendar_days=365):
 
     # set date
     today = datetime.datetime.now().strftime('%Y-%m-%d')
-    one_year_before = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime(
+    days_before = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime(
         '%Y-%m-%d')
 
     # download stocks data
@@ -24,21 +25,21 @@ def download(file_name='data0309.pkl', calendar_days=365):
     for i in tqdm(stock_info.index, desc='[Downloading Stocks]'):
         try:
             # get data
-            hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
+            hist = ts.get_k_data(i, start=days_before, end=today)  # (from past to now)
             code.append(i)
             data.append(hist)
         except:
             continue
 
     # download indices data
-    indices = ['000001', '399001', '399006']
+    indices = ['399001', '399006']
     for i in tqdm(indices, desc='[Downloading Indices]'):
         if i in code:
             continue
         else:
             try:
                 # get data
-                hist = ts.get_k_data(i, start=one_year_before, end=today)  # (from past to now)
+                hist = ts.get_k_data(i, index=True, start=days_before, end=today)  # (from past to now)
                 code.append(i)
                 data.append(hist)
             except:
@@ -46,6 +47,7 @@ def download(file_name='data0309.pkl', calendar_days=365):
 
     # write into files
     content = dict(zip(code, data))
+    print(content['399001'])
 
     fn = file_name
     with open(fn, 'wb') as f:  # open file with write-mode
