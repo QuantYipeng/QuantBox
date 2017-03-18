@@ -517,10 +517,10 @@ def dl_back_test(target='300403',
 
 def dl_predict(target='300403',
                correlations=10,
-               days=200,
+               days=500,
                length=15,
                label_size=10,
-               hist_file='hist0306.pkl',
+               hist_file='hist0317.pkl',
                show_figure=False):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
