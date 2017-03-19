@@ -23,8 +23,12 @@ def _pre_process(m):
 
 def _is_in_time_interval(start, target, end):
     def _t2s(_t):
-        _h, _m, _s = _t.strip().split(':')
-        return int(_h) * 3600 + int(_m) * 60 + int(_s)
+        try:
+            _h, _m, _s = _t.strip().split(':')
+            second = int(_h) * 3600 + int(_m) * 60 + int(_s)
+        except:
+            second = 0
+        return second
 
     sec_start = _t2s(start)  # change str to seconds
     sec_target = _t2s(target)
@@ -216,6 +220,7 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
                 # volume at t+1
                 data[i].append(h['volume'].values[i + j + 1])
 
+            '''
             # big deals
             for h in hist:
                 big_deal_result = _get_big_deal_statistic(code=h['code'].values[0],
@@ -223,7 +228,7 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
                                                           vol=0)
                 for b in big_deal_result:
                     data[i].append(b)
-
+            '''
         # add label
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
                   / hist[0]['close'].values[i + l])

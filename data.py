@@ -7,7 +7,7 @@ import pickle
 from tqdm import tqdm
 
 
-def download(file_name='data0309.pkl', calendar_days=365):
+def download_hist(file_name='data0309.pkl', calendar_days=365):
     # using get_k_hist to download
 
     # get stock names
@@ -48,6 +48,27 @@ def download(file_name='data0309.pkl', calendar_days=365):
     # write into files
     content = dict(zip(code, data))
     print(content['399001'])
+
+    fn = file_name
+    with open(fn, 'wb') as f:  # open file with write-mode
+        pickle.dump(content, f)  # serialize and save object
+    return
+
+
+def download_deals(file_name='deals0317.pkl', calendar_days=365):
+    content = []
+
+    # get stock names
+    stock_info = ts.get_stock_basics()
+
+    for code in tqdm(stock_info.index, desc='[Downloading Deals]'):
+        try:
+            for d in range(calendar_days + 1):
+                date = (datetime.datetime.now() - datetime.timedelta(days=d)).strftime(
+                    '%Y-%m-%d')
+                content.append({code: {date: ts.get_tick_data(code, date)}})
+        except:
+            continue
 
     fn = file_name
     with open(fn, 'wb') as f:  # open file with write-mode
