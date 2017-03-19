@@ -147,6 +147,8 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
                 # volume at t+1
                 data[i].append(h['volume'].values[i + j + 1])
 
+            # bid deals
+
         # add label
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
                   / hist[0]['close'].values[i + l])
