@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import warnings
+import tushare as ts
 from scipy.stats.stats import pearsonr
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
@@ -18,6 +19,74 @@ def _pre_process(m):
         for r in range(np.shape(m)[0]):
             m[r, c] = (m[r, c] - mean) / std
     return
+
+
+def _is_in_time_interval(start, target, end):
+    def _t2s(_t):
+        _h, _m, _s = _t.strip().split(':')
+        return int(_h) * 3600 + int(_m) * 60 + int(_s)
+
+    sec_start = _t2s(start)  # change str to seconds
+    sec_target = _t2s(target)
+    sec_end = _t2s(end)
+    if sec_start <= sec_target <= sec_end:
+        return True
+    else:
+        return False
+
+
+def _get_big_deal_statistic(code='300403', date='2017-03-17', vol=0):
+    warnings.filterwarnings("ignore")
+
+    def _change2float(change):
+        if change == '--':
+            return 0
+        else:
+            return float(change)
+
+    results = []
+    df = ts.get_tick_data(code, date)
+    # for total
+    for deal_type in ['买盘', '卖盘', '中性盘']:
+        # Count
+        results.append(len([row['volume']
+                            for index, row in df.iterrows()
+                            if row['type'] == deal_type
+                            and row['volume'] >= vol]))
+        # E(volume)
+        results.append(np.nan_to_num(np.mean([row['volume']
+                                              for index, row in df.iterrows()
+                                              if row['type'] == deal_type
+                                              and row['volume'] >= vol])))
+        # E(change)
+        results.append(np.nan_to_num(np.mean([_change2float(row['change'])
+                                              for index, row in df.iterrows()
+                                              if row['type'] == deal_type
+                                              and row['volume'] >= vol])))
+
+    # for each time interval
+    for time_interval in [('09:20:00', '10:05:00'),
+                          ('10:05:00', '10:35:00'),
+                          ('10:35:00', '11:05:00'),
+                          ('11:05:00', '11:35:00'),
+                          ('12:55:00', '13:35:00'),
+                          ('13:35:00', '14:05:00'),
+                          ('14:05:00', '14:35:00'),
+                          ('14:35:00', '15:05:00')]:
+        for deal_type in ['买盘', '卖盘', '中性盘']:
+            v_c = [(row['volume'], _change2float(row['change']))
+                   for index, row in df.iterrows()
+                   if _is_in_time_interval(time_interval[0], row['time'], time_interval[1])
+                   and row['type'] == deal_type
+                   and row['volume'] >= vol]
+            # Count
+            results.append(len(v_c))
+            # E(volume)
+            results.append(np.nan_to_num(np.mean([x[0] for x in v_c])))
+            # E(dPrice)
+            results.append(np.nan_to_num(np.mean([x[1] for x in v_c])))
+
+    return results
 
 
 def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, data_file='hist0316.pkl'):
@@ -122,7 +191,7 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
     data = []
     returns = []
     # for each sample
-    for i in range(len(hist[0]) - (l + 1)):
+    for i in tqdm(range(len(hist[0]) - (l + 1)), desc='Preparing Sample Data'):
 
         data.append([])
         # for each data
@@ -147,7 +216,13 @@ def _get_data_for_back_test(target='300403', correlations=10, days=200, l=1, dat
                 # volume at t+1
                 data[i].append(h['volume'].values[i + j + 1])
 
-            # bid deals
+            # big deals
+            for h in hist:
+                big_deal_result = _get_big_deal_statistic(code=h['code'].values[0],
+                                                          date=h['date'].values[i + j + 1],
+                                                          vol=0)
+                for b in big_deal_result:
+                    data[i].append(b)
 
         # add label
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
@@ -653,4 +728,3 @@ def get_best_parameters(target='300403',
             parameters['days'] = record[i]['days']
             parameters['length'] = record[i]['length']
     return parameters
-
