@@ -2,7 +2,7 @@ import pickle
 import deeplearning
 
 
-def get_stocks_mc_gbm_dl(hist_file='data0316.pkl', gbm_file='gbm0316.pkl'):
+def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl'):
     # 1. low error means history is learn-able,
     #    which also indicates that the history has been recurring
     # 2. low probability means the this situation is not in history
@@ -17,7 +17,7 @@ def get_stocks_mc_gbm_dl(hist_file='data0316.pkl', gbm_file='gbm0316.pkl'):
                                                                      correlations=10,
                                                                      days=500,
                                                                      length=15,
-                                                                     label_size=10,
+                                                                     recent_days=50,
                                                                      hist_file=hist_file,
                                                                      show_figure=False)
         results.append({'code': content[i]['code'],
