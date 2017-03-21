@@ -151,7 +151,6 @@ def _get_data_for_predict(target='300403',
         except:
             print('cannot get data of ' + c)
 
-
     # drop the unmatched data point
     def _match_test_and_adjust(hist_a, hist_b):
         # return:
@@ -170,10 +169,9 @@ def _get_data_for_predict(target='300403',
 
     # match & drop
     temp_hist = [hist[0]]
-    for i in range(len(hist)):
+    for i in tqdm(range(len(hist)), desc='[Matching And Dropping]'):
         if i == 0:
             continue
-        print(i)
         temp_hist_b, is_match = _match_test_and_adjust(hist[0], hist[i])
 
         if is_match:
@@ -182,13 +180,8 @@ def _get_data_for_predict(target='300403',
             pass
     hist = temp_hist
 
+    print('number of matched hist:', end=' ')
     print(len(hist))
-    print(hist[0])
-    print(hist[1])
-    print(hist[2])
-    print(hist[3])
-    print(hist[4])
-    print(hist[5])
 
     # get corr
     corr = []
@@ -216,7 +209,7 @@ def _get_data_for_predict(target='300403',
     label_size = 0
 
     # for each sample
-    for i in range(len(hist[0]) - (l + 1)):
+    for i in tqdm(range(len(hist[0]) - (l + 1)), desc='[Preparing Samples]'):
 
         hist_data_with_label.append([])
         # add data
@@ -277,8 +270,6 @@ def _get_data_for_predict(target='300403',
             continue
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
                   / hist[0]['close'].values[i + l])
-        print(datetime.datetime.strptime(hist[0]['date'].values[i + l + 1], "%Y-%m-%d"))
-        print(change)
         # add return
         recent_returns.append(change)
 
