@@ -125,7 +125,7 @@ def _get_big_deal_statistic(code='300403', date='2017-03-17', vol=0):
 
 def _get_data_for_predict(target='300403',
                           correlations=10,
-                          days=200,
+                          days=500,
                           l=1,
                           recent_days=10,
                           hist_file='hist0316.pkl'):
@@ -151,56 +151,44 @@ def _get_data_for_predict(target='300403',
         except:
             print('cannot get data of ' + c)
 
+
     # drop the unmatched data point
-    def _match_trim_b(hist_a, hist_b):
+    def _match_test_and_adjust(hist_a, hist_b):
         # return:
         # hist_a, hist_b, is_too_many_a_dropped (If True -> drop hist_b)
-
-        to_be_drop_a = []
-        if len(hist_a.index) - len(hist_b.index) != 0:
-            for _i in range(len(hist_a.index)):
-                exist = 0
-                for _j in range(len(hist_b.index)):
-                    if hist_a.index[_i] != hist_b.index[_j]:
-                        exist = 0
-                    else:
-                        exist = 1
-                        break
-                if exist == 0:
-                    to_be_drop_a.append(hist_a.index[_i])
-        nb_drop_a = len(to_be_drop_a)
-        if nb_drop_a > 0:
-            return hist_a, hist_b, True
-        hist_a = hist_a.drop(to_be_drop_a, axis=0)
+        for index, row in hist_a.iterrows():
+            if row['date'] not in hist_b['date'].values.tolist():
+                return hist_b, False
 
         to_be_drop_b = []
-        if len(hist_b.index) - len(hist_a.index) != 0:
-            for _i in range(len(hist_b.index)):
-                exist = 0
-                for _j in range(len(hist_a.index)):
-                    if hist_b.index[_i] != hist_a.index[_j]:
-                        exist = 0
-                    else:
-                        exist = 1
-                        break
-                if exist == 0:
-                    to_be_drop_b.append(hist_b.index[_i])
-        hist_b = hist_b.drop(to_be_drop_b, axis=0)
+        for index, row in hist_b.iterrows():
+            if row['date'] not in hist_a['date'].values.tolist():
+                to_be_drop_b.append(index)
+        hist_b_to_be_return = hist_b.drop(to_be_drop_b, axis=0)
 
-        return hist_a, hist_b, False
+        return hist_b_to_be_return, True
 
     # match & drop
-    drop_list = []
-    for i in tqdm(range(len(hist)), desc=('[Matching & Dropping for ' + target + ']')):
+    temp_hist = [hist[0]]
+    for i in range(len(hist)):
         if i == 0:
             continue
-        hist[0], hist[i], drop_b = _match_trim_b(hist[0], hist[i])
-        # if we too drop too many hist_a elements, then we will drop hist_b
-        if drop_b:
-            drop_list.append(i)
-    drop_list.reverse()
-    for d in drop_list:
-        hist.pop(d)
+        print(i)
+        temp_hist_b, is_match = _match_test_and_adjust(hist[0], hist[i])
+
+        if is_match:
+            temp_hist.append(temp_hist_b)
+        else:
+            pass
+    hist = temp_hist
+
+    print(len(hist))
+    print(hist[0])
+    print(hist[1])
+    print(hist[2])
+    print(hist[3])
+    print(hist[4])
+    print(hist[5])
 
     # get corr
     corr = []
@@ -225,7 +213,6 @@ def _get_data_for_predict(target='300403',
     hist = temp_hist
 
     hist_data_with_label = []
-    hist_returns = []
     label_size = 0
 
     # for each sample
@@ -258,13 +245,13 @@ def _get_data_for_predict(target='300403',
                   / hist[0]['close'].values[i + l])
         label_size = _add_label(hist_data_with_label[i], change)
 
-        # add return
-        hist_returns.append(change)
-
     # get current
     recent_data = []
+    recent_returns = []
     for i in range(len(hist[0]) - l)[-recent_days:]:
-        # last day: i = len(hist[0]) - (l + 1)
+        # label day: i + l + 1
+        # last sample beginning: i = len(hist[0]) - l - 1
+        # last label(when in last sample): len(hist[0]) (unknown)
         recent_data.append([])
         for j in range(l):
             # weekday at t+1
@@ -286,6 +273,14 @@ def _get_data_for_predict(target='300403',
                 recent_data[-1].append(h['close'].values[i + j])
                 # volume at t+1
                 recent_data[-1].append(h['volume'].values[i + j + 1])
+        if i == len(hist[0]) - l - 1:
+            continue
+        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
+                  / hist[0]['close'].values[i + l])
+        print(datetime.datetime.strptime(hist[0]['date'].values[i + l + 1], "%Y-%m-%d"))
+        print(change)
+        # add return
+        recent_returns.append(change)
 
     # adjust
     hist_data_with_label = np.array(hist_data_with_label)
@@ -294,7 +289,6 @@ def _get_data_for_predict(target='300403',
     train_data = hist_data_with_label[:, :data_size]
     train_label = hist_data_with_label[:, data_size:]
 
-    recent_returns = hist_returns[-(recent_days - 1):]
     recent_data = np.array(recent_data)
     recent_label = hist_data_with_label[-(recent_days - 1):, data_size:]
 
@@ -302,14 +296,17 @@ def _get_data_for_predict(target='300403',
     _pre_process(train_data)
     _pre_process(recent_data)
 
+    # recent_data: recent_days
+    # recent_label: recent_days-1
+    # recent_returns: recent_days -1
     return train_data, train_label, recent_data, recent_label, recent_returns, data_size, label_size
 
 
 def dl_predict(target='300403',
                correlations=10,
-               days=500,
+               days=200,
                length=15,
-               recent_days=50,
+               recent_days=20,
                hist_file='hist0321.pkl',
                show_figure=True):
     # parameters:
@@ -378,7 +375,7 @@ def dl_predict(target='300403',
         ax = fig.add_subplot((np.shape(recent_predict)[1] + 1), 1, (np.shape(recent_predict)[1] + 1))
         ax.grid(True)
         x = np.linspace(1, len(recent_predict), len(recent_predict))
-        plt.bar(x, [x for x in recent_returns] + [0], alpha=0.5, color='k')
+        plt.bar(x, recent_returns + [0], alpha=0.5, color='k')
         plt.title('returns')
         plt.show()
 

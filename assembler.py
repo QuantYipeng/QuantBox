@@ -17,7 +17,7 @@ def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl'):
                                                                      correlations=10,
                                                                      days=500,
                                                                      length=15,
-                                                                     recent_days=50,
+                                                                     recent_days=20,
                                                                      hist_file=hist_file,
                                                                      show_figure=False)
         results.append({'code': content[i]['code'],

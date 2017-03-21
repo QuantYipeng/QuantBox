@@ -32,7 +32,10 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
             continue
 
     # download indices data
-    indices = ['399001', '399006']
+    indices = ['000001', '000002', '000003', '000008', '000009', '000010',
+               '000011', '000012', '000016', '000017', '000300', '399001',
+               '399002', '399003', '399004', '399005', '399006', '399100',
+               '399101', '399106', '399107', '399108', '399333', '399606']
     for i in tqdm(indices, desc='[Downloading Indices]'):
         if i in code:
             continue
@@ -40,14 +43,14 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
             try:
                 # get data
                 hist = ts.get_k_data(i, index=True, start=days_before, end=today)  # (from past to now)
-                code.append(i)
+                code.append('i_' + i)
                 data.append(hist)
             except:
                 continue
 
     # write into files
     content = dict(zip(code, data))
-    print(content['399001'])
+    print(content['i_399001'])
 
     fn = file_name
     with open(fn, 'wb') as f:  # open file with write-mode
