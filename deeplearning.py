@@ -157,7 +157,7 @@ def _get_data_for_predict(target='300403',
 
     # match & drop
     temp_hist = [hist[0]]
-    for i in tqdm(range(len(hist)), desc='[Matching And Dropping]'):
+    for i in tqdm(range(len(hist)), desc='[Matching And Dropping '+target+']'):
         if i == 0:
             continue
         # left join with target dates, then fill NaN with last before_data
@@ -188,7 +188,7 @@ def _get_data_for_predict(target='300403',
     hist_data_with_label = []
     label_size = 0
     # for each sample
-    for i in tqdm(range(len(hist[0]) - (l + 1)), desc='[Preparing Samples]'):
+    for i in tqdm(range(len(hist[0]) - (l + 1)), desc='[Preparing Samples '+target+']'):
 
         hist_data_with_label.append([])
         # add data
@@ -216,6 +216,9 @@ def _get_data_for_predict(target='300403',
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
                   / hist[0]['close'].values[i + l])
         label_size = _add_label(hist_data_with_label[i], change)
+
+    print('[Last Trading Day]', end=' ')
+    print(hist[0].iloc[-1, 0])
 
     # get current
     recent_data = []
@@ -245,6 +248,7 @@ def _get_data_for_predict(target='300403',
                 recent_data[-1].append(h['close'].values[i + j])
                 # volume at t+1
                 recent_data[-1].append(h['volume'].values[i + j + 1])
+
         if i == len(hist[0]) - l - 1:
             continue
         change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
@@ -274,10 +278,10 @@ def _get_data_for_predict(target='300403',
 
 def dl_predict(target='300403',
                correlations=10,
-               days=200,
+               days=500,
                length=15,
                recent_days=20,
-               hist_file='hist0321.pkl',
+               hist_file='hist0322.pkl',
                show_figure=True):
     # parameters:
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
@@ -288,9 +292,6 @@ def dl_predict(target='300403',
     # get data
     train_data, train_label, recent_data, recent_label, recent_returns, data_size, label_size = \
         _get_data_for_predict(target, correlations, days, length, recent_days, hist_file)
-
-    print(train_data[0][:30])
-    print(recent_data[0][:30])
 
     # initiate the model
     model = Sequential()
@@ -318,7 +319,7 @@ def dl_predict(target='300403',
 
     # predict
     recent_predict = model.predict(recent_data)
-    print(recent_predict)
+
     # get the errors
     type_1 = []  # incorrect rejection
     type_2 = []  # incorrect accept

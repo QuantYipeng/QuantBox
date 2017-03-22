@@ -11,7 +11,7 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
     # using get_k_hist to download
 
     # get stock names
-    stock_info = ts.get_stock_basics()
+    codes = ts.get_today_all()['code'].values
 
     # set date
     today = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -22,7 +22,7 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
     code = []
     data = []
 
-    for i in tqdm(stock_info.index, desc='[Downloading Stocks]'):
+    for i in tqdm(codes, desc='[Downloading Stocks]'):
         try:
             # get data
             hist = ts.get_k_data(i, start=days_before, end=today)  # (from past to now)
@@ -37,16 +37,13 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
                '399002', '399003', '399004', '399005', '399006', '399100',
                '399101', '399106', '399107', '399108', '399333', '399606']
     for i in tqdm(indices, desc='[Downloading Indices]'):
-        if i in code:
+        try:
+            # get data
+            hist = ts.get_k_data(i, index=True, start=days_before, end=today)  # (from past to now)
+            code.append('i_' + i)
+            data.append(hist)
+        except:
             continue
-        else:
-            try:
-                # get data
-                hist = ts.get_k_data(i, index=True, start=days_before, end=today)  # (from past to now)
-                code.append('i_' + i)
-                data.append(hist)
-            except:
-                continue
 
     # write into files
     content = dict(zip(code, data))
