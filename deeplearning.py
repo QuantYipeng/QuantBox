@@ -133,7 +133,7 @@ def _get_big_deal_statistic(code='300403', date='2017-03-17', vol=0):
 def _get_data_for_predict(target='300403',
                           correlations=10,
                           days=500,
-                          l=1,
+                          data_length=1,
                           recent_days=10,
                           hist_file='hist0316.pkl'):
     # parameters:
@@ -188,11 +188,11 @@ def _get_data_for_predict(target='300403',
     hist_data_with_label = []
     label_size = 0
     # for each sample
-    for i in tqdm(range(len(hist[0]) - (l + 1)), desc='[Preparing Samples '+target+']'):
+    for i in tqdm(range(len(hist[0]) - (data_length + 1)), desc='[Preparing Samples '+target+ ']'):
 
         hist_data_with_label.append([])
         # add data
-        for j in range(l):
+        for j in range(data_length):
             # weekday at t+1
             hist_data_with_label[i].append(
                 datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d").weekday())
@@ -213,8 +213,8 @@ def _get_data_for_predict(target='300403',
                 hist_data_with_label[i].append(h['volume'].values[i + j + 1])
 
         # add label
-        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
-                  / hist[0]['close'].values[i + l])
+        change = ((hist[0]['close'].values[i + data_length + 1] - hist[0]['close'].values[i + data_length])
+                  / hist[0]['close'].values[i + data_length])
         label_size = _add_label(hist_data_with_label[i], change)
 
     print('[Last Trading Day]', end=' ')
@@ -223,12 +223,12 @@ def _get_data_for_predict(target='300403',
     # get current
     recent_data = []
     recent_returns = []
-    for i in range(len(hist[0]) - l)[-recent_days:]:
+    for i in range(len(hist[0]) - data_length)[-recent_days:]:
         # label day: i + l + 1
         # last sample beginning: i = len(hist[0]) - l - 1
         # last label(when in last sample): len(hist[0]) (unknown)
         recent_data.append([])
-        for j in range(l):
+        for j in range(data_length):
             # weekday at t+1
             recent_data[-1].append(
                 datetime.datetime.strptime(hist[0]['date'].values[i + j + 1], "%Y-%m-%d").weekday())
@@ -249,10 +249,10 @@ def _get_data_for_predict(target='300403',
                 # volume at t+1
                 recent_data[-1].append(h['volume'].values[i + j + 1])
 
-        if i == len(hist[0]) - l - 1:
+        if i == len(hist[0]) - data_length - 1:
             continue
-        change = ((hist[0]['close'].values[i + l + 1] - hist[0]['close'].values[i + l])
-                  / hist[0]['close'].values[i + l])
+        change = ((hist[0]['close'].values[i + data_length + 1] - hist[0]['close'].values[i + data_length])
+                  / hist[0]['close'].values[i + data_length])
         # add return
         recent_returns.append(change)
 
@@ -277,9 +277,9 @@ def _get_data_for_predict(target='300403',
 
 
 def dl_predict(target='300403',
-               correlations=10,
-               days=500,
-               length=15,
+               nb_of_correlations=10,
+               days_for_statistic=500,
+               data_length=15,
                recent_days=20,
                hist_file='hist0322.pkl',
                show_figure=True):
@@ -291,7 +291,7 @@ def dl_predict(target='300403',
 
     # get data
     train_data, train_label, recent_data, recent_label, recent_returns, data_size, label_size = \
-        _get_data_for_predict(target, correlations, days, length, recent_days, hist_file)
+        _get_data_for_predict(target, nb_of_correlations, days_for_statistic, data_length, recent_days, hist_file)
 
     # initiate the model
     model = Sequential()
