@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import pickle
 import warnings
 import tushare as ts
-from scipy.stats.stats import pearsonr
+import pandas as pd
+from scipy.stats.stats import spearmanr
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from tqdm import tqdm
@@ -16,8 +17,14 @@ def _pre_process(m):
     for c in range(np.shape(m)[1]):
         mean = np.mean(m[:, c])
         std = np.std(m[:, c])
-        for r in range(np.shape(m)[0]):
-            m[r, c] = (m[r, c] - mean) / std
+        # if std = 0 use sigmoid
+        if std == 0:
+            for r in range(np.shape(m)[0]):
+                m[r, c] = 1.0 / (1 + np.exp(-float(m[r, c])))
+        # else use z-score
+        else:
+            for r in range(np.shape(m)[0]):
+                m[r, c] = (m[r, c] - mean) / std
     return
 
 
@@ -139,75 +146,47 @@ def _get_data_for_predict(target='300403',
     with open(hist_file, 'rb') as f:
         content = pickle.load(f)  # read file and build object
 
-    # get [target, related assets]
+    # get hist=[target, related assets]
     hist = []
-    pool = list(content.keys())
-    if target in pool:
-        pool.remove(target)
-    code = [target] + pool
-    for c in code:
-        try:
-            hist.append(content[c][-days:])
-        except:
-            print('cannot get data of ' + c)
-
-    # drop the unmatched data point
-    def _match_test_and_adjust(hist_a, hist_b):
-        # return:
-        # hist_a, hist_b, is_too_many_a_dropped (If True -> drop hist_b)
-        for index, row in hist_a.iterrows():
-            if row['date'] not in hist_b['date'].values.tolist():
-                return hist_b, False
-
-        to_be_drop_b = []
-        for index, row in hist_b.iterrows():
-            if row['date'] not in hist_a['date'].values.tolist():
-                to_be_drop_b.append(index)
-        hist_b_to_be_return = hist_b.drop(to_be_drop_b, axis=0)
-
-        return hist_b_to_be_return, True
+    codes_content = list(content.keys())
+    if target in codes_content:
+        codes_content.remove(target)
+    codes_adjusted = [target] + codes_content
+    for code in codes_adjusted:
+        hist.append(content[code][-days:])
 
     # match & drop
     temp_hist = [hist[0]]
     for i in tqdm(range(len(hist)), desc='[Matching And Dropping]'):
         if i == 0:
             continue
-        temp_hist_b, is_match = _match_test_and_adjust(hist[0], hist[i])
-
-        if is_match:
-            temp_hist.append(temp_hist_b)
-        else:
-            pass
+        # left join with target dates, then fill NaN with last before_data
+        temp_hist_b = pd.merge(hist[0].loc[:, ['date']], hist[i],
+                               on='date', how='left').fillna(method='pad')
+        # drop the hist with NaN at beginning
+        if temp_hist_b.isnull().any().any():
+            continue
+        temp_hist.append(temp_hist_b)
     hist = temp_hist
 
-    print('number of matched hist:', end=' ')
-    print(len(hist))
-
-    # get corr
+    # get corr (n largest correlations and n lowest correlation)
     corr = []
     for i in range(len(hist)):
-        corr.append(pearsonr(hist[0]['close'].values, hist[i]['close'].values)[0])
-    # ignore itself
-    corr_dict = dict(zip(range(len(hist))[1:], corr[1:]))
-
-    # sort by values: sorted(corr_dict.items(), key=lambda item: item[1])
-    # corr_index is the N(correlations) asset's index with the biggest correlation (exclude itself)
-    # and the N/2 asset's index with the lowest correlation
-    corr_dict_sorted = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))
+        corr.append(spearmanr(hist[0]['close'].values, hist[i]['close'].values)[0])
+    corr_dict = dict(zip(range(len(hist))[1:], corr[1:]))  # ignore itself
+    corr_dict_sorted = np.array(sorted(corr_dict.items(), key=lambda item: item[1]))  # from low to large
     corr_index_bottom = corr_dict_sorted[-correlations:, 0].tolist()
     corr_index_top = corr_dict_sorted[:correlations, 0].tolist()
     corr_index = [corr_index_top, corr_index_bottom]
     corr_index = [y for x in corr_index for y in x]
-
-    # select the correlated N assets
     temp_hist = [hist[0]]
     for i in corr_index:
         temp_hist.append(hist[int(i)])
     hist = temp_hist
 
+    # get sample data and label
     hist_data_with_label = []
     label_size = 0
-
     # for each sample
     for i in tqdm(range(len(hist[0]) - (l + 1)), desc='[Preparing Samples]'):
 
@@ -304,11 +283,14 @@ def dl_predict(target='300403',
     # n = how many correlated assets will be used, n asset with biggest corr, and n asset with smallest corr
     # length = how many history days used in prediction
     # info_size = how many factors have been included in each history day
-    warnings.filterwarnings("ignore")
+    # warnings.filterwarnings("ignore")
 
     # get data
     train_data, train_label, recent_data, recent_label, recent_returns, data_size, label_size = \
         _get_data_for_predict(target, correlations, days, length, recent_days, hist_file)
+
+    print(train_data[0][:30])
+    print(recent_data[0][:30])
 
     # initiate the model
     model = Sequential()
@@ -336,7 +318,7 @@ def dl_predict(target='300403',
 
     # predict
     recent_predict = model.predict(recent_data)
-
+    print(recent_predict)
     # get the errors
     type_1 = []  # incorrect rejection
     type_2 = []  # incorrect accept
