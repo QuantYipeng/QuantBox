@@ -24,9 +24,3 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 2. holidays with lags
 3. technical analysis
 4. daily big deals
-
-# Useful Notes
-Stylized
-1. The distribution of returns is not normal. It's approximately symmetric and has fat tail as well as high peak.
-2. There is almost no correlation between returns for different days
-3. There is positive dependence between absolute returns on nearby days, and likewise for squared returns.
