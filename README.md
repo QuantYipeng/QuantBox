@@ -5,8 +5,8 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 集合A中的股票的股价变动。最后他会在预测结束时返回一个列表列出下一个交易日集合A中所有股票的收益率排序和预测误差。
 
 # Mechanism
-1st. Find the recent strong shares
-2nd. Analyse these shares using Machine Learning
+1. Find the recent strong shares
+2. Analyse these shares using Machine Learning
 
 # Way to find recent strong shares
 1. Monte Carlo simulation of Geometric Brownian Motion
