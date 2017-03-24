@@ -14,9 +14,9 @@ def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl'):
     for i in range(len(content)):
         print('[Processing] ' + str(i + 1) + ' of ' + str(len(content)))
         expected_return, type1, type2, err = deeplearning.dl_predict(target=content[i]['code'],
-                                                                     correlations=10,
-                                                                     days=500,
-                                                                     length=15,
+                                                                     nb_of_correlations=10,
+                                                                     days_for_statistic=500,
+                                                                     data_length=15,
                                                                      recent_days=20,
                                                                      hist_file=hist_file,
                                                                      show_figure=False)

@@ -213,8 +213,8 @@ def _get_data_for_predict(target='300403',
                 hist_data_with_label[i].append(h['volume'].values[i + j + 1])
 
         # add label
-        change = ((hist[0]['close'].values[i + data_length + 1] - hist[0]['close'].values[i + data_length])
-                  / hist[0]['close'].values[i + data_length])
+        change = ((hist[0]['close'].values[i + data_length + 1] - hist[0]['open'].values[i + data_length + 1])
+                  / hist[0]['open'].values[i + data_length + 1])
         label_size = _add_label(hist_data_with_label[i], change)
 
     print('[Last Trading Day]', end=' ')

@@ -7,25 +7,23 @@ import pickle
 from tqdm import tqdm
 
 
-def download_hist(file_name='data0309.pkl', calendar_days=365):
+def download_hist(file_name='data0309.pkl'):
     # using get_k_hist to download
 
     # get stock names
     codes = ts.get_today_all()['code'].values
 
-    # set date
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
-    days_before = (datetime.datetime.now() - datetime.timedelta(days=calendar_days)).strftime(
-        '%Y-%m-%d')
-
     # download stocks data
     code = []
     data = []
+    bug_codes = ['000982', '603010']
 
     for i in tqdm(codes, desc='[Downloading Stocks]'):
+        if i in bug_codes:
+            continue
         try:
             # get data
-            hist = ts.get_k_data(i, start=days_before, end=today)  # (from past to now)
+            hist = ts.get_k_data(i, autype='qfq')  # (from past to now)
             code.append(i)
             data.append(hist)
         except:
@@ -39,7 +37,7 @@ def download_hist(file_name='data0309.pkl', calendar_days=365):
     for i in tqdm(indices, desc='[Downloading Indices]'):
         try:
             # get data
-            hist = ts.get_k_data(i, index=True, start=days_before, end=today)  # (from past to now)
+            hist = ts.get_k_data(i, index=True)  # (from past to now)
             code.append('i_' + i)
             data.append(hist)
         except:
