@@ -24,3 +24,4 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 * holidays with lags
 * technical analysis
 * daily big deals
+* daily realized volatility （Taylor， CQF M2L6 P55）
