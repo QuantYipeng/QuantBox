@@ -9,7 +9,7 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 2. Analyse these shares using Machine Learning
 
 ## Way to find recent strong shares
-1. Monte Carlo simulation of Geometric Brownian Motion
+* Monte Carlo simulation of Geometric Brownian Motion
 
 ## Factors for machine learning (added)
 * past daily returns on itself with lags (o,h,l,c)
