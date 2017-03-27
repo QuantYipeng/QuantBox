@@ -5,7 +5,7 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 集合A中的股票的股价变动。最后他会在预测结束时返回一个列表列出下一个交易日集合A中所有股票的收益率排序和预测误差。
 
 ## Recommendations 
-* next trading day: 300402[2017/3/28]
+* next trading day: 300420[2017/3/28]
 * history recommendations: 
 
 ## Mechanism
