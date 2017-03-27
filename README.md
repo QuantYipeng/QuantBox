@@ -15,7 +15,7 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 ## Way to find recent strong shares
 * Monte Carlo simulation of Geometric Brownian Motion
 
-## Factors for machine learning (added)
+## Information Sets (added)
 * past daily returns on itself with lags (o,h,l,c)
 * past daily returns on related shares with lags (o,h,l,c)
 * past daily close price on itself with lags
@@ -23,13 +23,13 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 * past volumes with lags
 * day of week with lags
 
-## Factors for machine learning (will be added)
+## Information Sets (will be added)
 * day of year with lags
 * holidays with lags
 * technical analysis
-* daily big deals
 * daily realized volatility using 5m
    
    Taylor，CQF M2L6 P55.  
    Using ts.get_k_hist(code, ktype='5').  
-   The Learning Pool is the Panel Data for all trading stocks within one week
+   The Learning Pool is the Panel Data for all trading stocks within one week.  
+   One proposal is to seperate the rising returns and the failing returns
