@@ -4,6 +4,10 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 然后小盒子会对这些股票（集合A）的历史数据进行机器学习，然后他将学习到的结果应用到最新的数据中来预测未来一天
 集合A中的股票的股价变动。最后他会在预测结束时返回一个列表列出下一个交易日集合A中所有股票的收益率排序和预测误差。
 
+## Recommendations 
+* next trading day: 300402[2017/3/28]
+* history recommendations: 
+
 ## Mechanism
 1. Find the recent strong shares
 2. Analyse these shares using Machine Learning
