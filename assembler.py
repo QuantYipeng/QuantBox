@@ -2,7 +2,7 @@ import pickle
 import deeplearning
 
 
-def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl'):
+def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl', assembler_file='assembler0321.pkl'):
     # 1. low error means history is learn-able,
     #    which also indicates that the history has been recurring
     # 2. low probability means the this situation is not in history
@@ -28,6 +28,9 @@ def get_stocks_mc_gbm_dl(hist_file='data0321.pkl', gbm_file='gbm0321.pkl'):
                         'E_return_1w': content[i]['expected_return'],
                         'p_value': content[i]['p_value']})
     results.sort(key=lambda k: (k.get('E_return_1d', 0)))
+
+    with open(assembler_file, 'wb') as f:  # open file with write-mode
+        pickle.dump(results, f)  # serialize and save object
 
     for result in results:
         print(result)
