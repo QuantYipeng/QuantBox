@@ -29,6 +29,7 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 * technical analysis
 * daily big deals
 * daily realized volatility using 5m
+   
    Taylor，CQF M2L6 P55.  
    Using ts.get_k_hist(code, ktype='5').  
    The Learning Pool is the Panel Data for all trading stocks within one week
