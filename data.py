@@ -16,7 +16,7 @@ def download_hist(file_name='data0309.pkl'):
     # download stocks data
     code = []
     data = []
-    bug_codes = ['000982', '603010', '300578']
+    bug_codes = ['000982', '603010', '300578', '603429','603330']
 
     for i in tqdm(codes, desc='[Downloading Stocks]'):
         if i in bug_codes:

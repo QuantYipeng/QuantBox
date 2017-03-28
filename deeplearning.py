@@ -345,7 +345,7 @@ def dl_predict(target='300403',
             plt.bar(x[:-1], recent_label[:, i], alpha=0.5, color='r')
             plt.bar(x[:-1], recent_predict[:-1, i], alpha=0.5, color='b')
             plt.bar(x[-1], recent_predict[-1, i], alpha=1, color='k')
-            plt.title(mapping[i])
+            plt.title(mapping[i]).i
         ax = fig.add_subplot((np.shape(recent_predict)[1] + 1), 1, (np.shape(recent_predict)[1] + 1))
         ax.grid(True)
         x = np.linspace(1, len(recent_predict), len(recent_predict))
