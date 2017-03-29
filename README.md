@@ -15,21 +15,34 @@ QuantBox 是一款基于深度学习的股票量化分析软件。他可以通�
 ## Way to find recent strong shares
 * Monte Carlo simulation of Geometric Brownian Motion
 
-## Information Sets (added)
-* past daily returns on itself with lags (o,h,l,c)
-* past daily returns on related shares with lags (o,h,l,c)
-* past daily close price on itself with lags
-* past daily close price on related shares with lags
-* past volumes with lags
-* day of week with lags
-
-## Information Sets (will be added)
-* day of year with lags
-* holidays with lags
-* technical analysis
-* daily realized volatility using 5m
+## Information Sets
+* (added) past daily returns on itself with lags
+   will be delete
+* (added) past daily returns on related shares with lags
+   will be delete
+* (added) past daily close price on itself with lags
+* (added) past daily close price on related shares with lags
+* (added) past volumes with lags
+* (added) day of week with lags
+* (will be added) day of year with lags (will be added)
+* (will be added) holidays with lags (will be added)
+* (will be added) daily realized volatility using 5m (will be added)
    
    Taylor，CQF M2L6 P55.  
    Using ts.get_k_hist(code, ktype='5').  
    The Learning Pool is the Panel Data for all trading stocks within one week.  
    One proposal is to seperate the rising returns and the failing returns
+* (will be added) past daily candle bar informations
+
+   (h-max{o,c})/c_t-1  
+   (min{o,c}-l)/c_t-1  
+   (c-o)/c_t-1
+* (will be added) past daily candle bar informations on related shares
+
+   (h-max{o,c})/c_t-1  
+   (min{o,c}-l)/c_t-1  
+   (c-o)/c_t-1
+* (will be added) openning price change
+
+   (o_t-c_t-1)/c_t-1  
+   which represeting the hesitating people's minds
