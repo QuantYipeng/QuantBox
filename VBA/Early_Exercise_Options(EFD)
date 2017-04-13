@@ -1,0 +1,58 @@
+Function optvalue(Vol, Irate, Strike, Expiration, Payoff, EE, NAS)
+
+ReDim S(0 To NAS)
+ReDim VOld(0 To NAS) ' refers to V(k)
+ReDim VNew(0 To NAS) ' refers to V(k+1)
+ReDim dummy(0 To NAS, 1 To 3)
+
+ds = 2 * Strike / NAS
+dt = 0.9 / NAS / NAS / Vol / Vol ' for stable purpose(theoretically)
+NTS = Int(Expiration / dt) + 1
+dt = Expiration / NTS
+
+q = 1
+If Payoff = "P" Then q = -1 'C for call, P for put
+
+'the final payoff, where k=0
+For i = 0 To NAS
+    S(i) = i * ds
+    VOld(i) = Application.Max(q * (S(i) - Strike), 0) ' q=1 for payoff of call, q=-1 for payoff of put
+    dummy(i, 1) = S(i)
+    dummy(i, 2) = VOld(i) ' Payoff
+Next i
+
+For k = 1 To NTS
+    For i = 1 To NAS - 1
+        Delta = (VOld(i + 1) - VOld(i - 1)) / 2 / ds
+        Gamma = (VOld(i + 1) - 2 * VOld(i) + VOld(i - 1)) / ds ^ 2
+        Theta = -0.5 * Vol ^ 2 * S(i) ^ 2 * Gamma _
+            - Irate * S(i) * Delta + Irate * VOld(i) ' BSE
+        VNew(i) = VOld(i) - dt * Theta
+    Next i
+    
+    VNew(0) = VOld(0) * (1 - Irate * dt) ' Boundary Condition at S=0 diffusion and drift switch off
+    VNew(NAS) = 2 * VNew(NAS - 1) - VNew(NAS - 2) ' Gamma=0 at S=infinity
+    
+    For i = 0 To NAS
+        VOld(i) = VNew(i)
+    Next i
+    
+    If EE = "Y" Then
+        For i = 0 To NAS
+            VOld(i) = Application.Max(VOld(i), dummy(i, 2))
+            ' dummy(i,2) refers to the payoff of exercising with stock price level i
+            ' VOld(i) refers to the No-Arbitrage option value with stock price level i, exercise at Expiry
+        Next i
+    End If
+    
+Next k
+
+'the value at beginning, where k=NTS
+For i = 0 To NAS
+    dummy(i, 3) = VOld(i)
+Next i
+
+
+optvalue = dummy
+
+End Function
