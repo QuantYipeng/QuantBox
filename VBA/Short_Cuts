@@ -1,0 +1,20 @@
+<ctrl+j>
+Sub cnt2cmt()
+On Error GoTo out
+ActiveCell.AddComment
+With ActiveCell.Comment
+.Text Text:=ActiveCell.Formula
+.Visible = True
+.Shape.Select
+Selection.AutoSize = True
+End With
+ActiveCell.Select
+out:
+End Sub
+
+<shift+F3>
+show the insert function dialog
+
+<ctrl+shift+entre>
+{function}
+means apply the functions to all cells
