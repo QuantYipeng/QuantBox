@@ -1,0 +1,12 @@
+Sub cnt2cmt()
+On Error GoTo out
+ActiveCell.AddComment
+With ActiveCell.Comment
+.Text Text:=ActiveCell.Formula
+.Visible = True
+.Shape.Select
+Selection.AutoSize = True
+End With
+ActiveCell.Select
+out:
+End Sub
