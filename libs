@@ -42,4 +42,5 @@
     'shal......'
     copy the hashed password and paste it into
     /.jupyter/jupyter_notebook_config.py
-    c.NotebookApp.password = 'shal......'
+    [before]#c.NotebookApp.password = ''
+    [after]c.NotebookApp.password = 'shal......'
