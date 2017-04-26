@@ -30,3 +30,16 @@
     
 3.python PATH (windows)
     add PATH("...Python\Python35\Scripts;...Python\Python35")
+
+4.jupyter
+    pip install jupyter
+    jupyter notebook --generate-config
+    open any python ide
+    >>>from notebook.auth import passwd
+    >>>passwd()
+    Enter password:
+    Verify password:
+    'shal......'
+    copy the hashed password and paste it into
+    /.jupyter/jupyter_notebook_config.py
+    c.NotebookApp.password = 'shal......'
