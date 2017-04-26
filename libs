@@ -44,3 +44,5 @@
     /.jupyter/jupyter_notebook_config.py
     [before]#c.NotebookApp.password = ''
     [after]c.NotebookApp.password = 'shal......'
+    [after]c.NotebookApp.ip = '*' 
+    # Set ip to '*' to bind on all interfaces (ips) for the public server
